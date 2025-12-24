@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo cáo Chiến lược CodeGen AI - MSB (Modern UI)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* MSB Brand Colors */
+            --msb-red: #E41E26;
+            --msb-orange: #F06E1D;
+            --msb-gradient: linear-gradient(135deg, var(--msb-red) 0%, var(--msb-orange) 100%);
+            
+            /* UI Palette */
+            --bg-app: #f0f2f5;
+            --bg-slide: #ffffff;
+            --text-primary: #2c3e50;
+            --text-secondary: #546e7a;
+            --border-light: #e9ecef;
+            --shadow-soft: 0 10px 30px -5px rgba(0,0,0,0.1);
+            --shadow-hover: 0 20px 40px -5px rgba(0,0,0,0.2);
+            
+            /* Animation Easing */
+            --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --ease-out-back: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-app);
+            font-family: 'Roboto', sans-serif;
+            height: 100vh; display: flex; justify-content: center; align-items: center;
+            color: var(--text-primary);
+            overflow: hidden;
+        }
+
+        /* 16:9 Slide Container */
+        #slide-container {
+            width: 95vw; max-width: 1600px;
+            aspect-ratio: 16/9;
+            background: var(--bg-slide);
+            box-shadow: var(--shadow-soft);
+            border-radius: 12px;
+            position: relative; overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+
+        /* === MODERN SLIDE TRANSITIONS === */
+        .slide {
+            position: absolute; inset: 0;
+            padding: 40px 60px;
+            display: flex; flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            /* Initial state for entering slide: pushed down and scaled down slightly */
+            transform: translateY(60px) scale(0.95);
+            filter: blur(8px);
+            transition: 
+                opacity 0.8s var(--ease-smooth),
+                transform 0.8s var(--ease-smooth),
+                filter 0.8s var(--ease-smooth);
+            background: var(--bg-slide); z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+            /* Final state: centered, full scale, clear */
+            transform: translateY(0) scale(1);
+            filter: blur(0);
+            z-index: 10;
+            /* Delay slide activation slightly so content animations trigger after slide appears */
+            transition-delay: 0.1s; 
+        }
+
+        /* === STAGGERED CONTENT ANIMATIONS === */
+        /* Base class for elements inside slide that should animate in */
+        .anim-el {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s var(--ease-out-back);
+        }
+
+        /* Trigger animation when parent slide is active */
+        .slide.active .anim-el {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Stagger Delays for smooth sequencing */
+        .delay-1 { transition-delay: 0.3s; }
+        .delay-2 { transition-delay: 0.5s; }
+        .delay-3 { transition-delay: 0.7s; }
+        .delay-4 { transition-delay: 0.9s; }
+
+
+        /* === HEADER STYLING === */
+        .slide-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 3px solid transparent;
+            border-image: var(--msb-gradient) 1;
+            padding-bottom: 15px; margin-bottom: 30px;
+        }
+        .header-title { font-family: 'Montserrat', sans-serif; font-size: 32px; font-weight: 700; background: var(--msb-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-transform: uppercase; }
+        .header-logo { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 24px; color: var(--msb-red); background: #fff; padding: 5px 15px; border-radius: 4px; box-shadow: 0 2px 10px rgba(228, 30, 38, 0.2); }
+
+        /* === CONTENT LAYOUTS & COMPONENTS === */
+        .slide-content { flex: 1; overflow-y: auto; font-size: 18px; line-height: 1.6; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; height: 100%; align-items: start; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 30px; height: 100%; align-items: start; }
+        
+        .card {
+            background: #fff; border-radius: 12px; padding: 30px;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-light);
+            transition: transform 0.3s var(--ease-smooth), box-shadow 0.3s var(--ease-smooth);
+        }
+        .card:hover { transform: translateY(-5px); box-shadow: var(--shadow-hover); }
+        .card-highlight { background: linear-gradient(to bottom right, #fff5f5, #fff); border-top: 4px solid var(--msb-orange); }
+        
+        /* Typography */
+        h1 { font-family: 'Montserrat', sans-serif; font-size: 54px; font-weight: 900; color: var(--msb-red); margin: 0; }
+        h2 { font-size: 36px; color: var(--text-primary); margin-top: 0; }
+        h3 { font-family: 'Montserrat', sans-serif; font-size: 22px; color: var(--msb-orange); font-weight: 700; margin-bottom: 15px; }
+        ul { padding-left: 25px; } li { margin-bottom: 10px; }
+        .badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .chart-box { position: relative; height: 100%; min-height: 350px; width: 100%; border-radius: 12px; padding: 10px; background: #fff; box-shadow: var(--shadow-soft); }
+
+        /* Modern Tables */
+        table.clean-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 15px; font-size: 16px; background: white; border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-soft); }
+        table.clean-table th { background: var(--msb-gradient); color: white; padding: 18px; text-align: left; font-family: 'Montserrat', sans-serif; }
+        table.clean-table td { padding: 15px 18px; border-bottom: 1px solid var(--border-light); vertical-align: middle; transition: background 0.2s; }
+        table.clean-table tr:last-child td { border-bottom: none; }
+        table.clean-table tr:hover td { background: #f9fafb; }
+        table.clean-table tr.highlight-row td { background: #fff0e6; font-weight: 500; border-top: 2px solid var(--msb-orange); border-bottom: 2px solid var(--msb-orange); }
+        
+        /* Heatmap Cells */
+        .heat-high { background-color: #d1e7dd !important; color: #0f5132; font-weight: bold; text-align: center; }
+        .heat-mid { background-color: #fff3cd !important; color: #664d03; text-align: center; }
+        .heat-low { background-color: #f8d7da !important; color: #842029; text-align: center; }
+
+        /* === CONTROLS === */
+        .controls {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 80px;
+            background: rgba(255,255,255,0.9); backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border-light);
+            display: flex; justify-content: space-between; align-items: center; padding: 0 50px; z-index: 100;
+        }
+        .btn-nav {
+            background: white; border: none; color: var(--text-secondary); padding: 12px 24px; border-radius: 30px;
+            cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 12px;
+            box-shadow: var(--shadow-soft); transition: all 0.3s var(--ease-out-back);
+            font-family: 'Montserrat', sans-serif;
+        }
+        .btn-nav:hover:not(:disabled) {
+            color: white; background: var(--msb-gradient);
+            transform: translateY(-3px); box-shadow: 0 5px 15px rgba(240, 110, 29, 0.3);
+        }
+        .btn-nav:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+        .progress-container { flex: 1; margin: 0 40px; height: 6px; background: #e9ecef; border-radius: 10px; overflow: hidden; }
+        .progress-bar { height: 100%; background: var(--msb-gradient); width: 0%; transition: width 0.5s var(--ease-smooth); border-radius: 10px;}
+        .slide-counter { font-family: 'Montserrat', sans-serif; font-weight: bold; font-size: 18px; color: var(--text-primary); }
+
+    </style>
+</head>
+<body>
+
+    <div id="slide-container">
+        
+        <div class="slide active" id="slide-1" style="padding: 0;">
+            <div style="display: flex; height: 100%; align-items: center;">
+                <div class="anim-el delay-1" style="flex: 1.2; padding: 80px; background: #fff; z-index: 2; clip-path: polygon(0 0, 100% 0, 90% 100%, 0% 100%); height: 100%; display: flex; flex-direction: column; justify-content: center; box-shadow: 10px 0 30px rgba(0,0,0,0.05);">
+                    <div style="font-family: 'Montserrat', sans-serif; font-size: 24px; font-weight: 700; color: var(--msb-orange); margin-bottom: 20px; letter-spacing: 2px; display: flex; align-items: center;">
+                        <i class="fas fa-code-branch" style="margin-right: 15px;"></i> KHỐI CÔNG NGHỆ THÔNG TIN
+                    </div>
+                    <h1 class="anim-el delay-2" style="line-height: 1.1; font-size: 60px;">CHIẾN LƯỢC<br><span style="background: var(--msb-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AI CODE GENERATION</span></h1>
+                    <div class="anim-el delay-3" style="height: 6px; width: 150px; background: var(--msb-gradient); margin: 40px 0; border-radius: 3px;"></div>
+                    <p class="anim-el delay-3" style="font-size: 28px; color: var(--text-secondary); font-weight: 300; margin-bottom: 60px;">Từ thử nghiệm Tabby Pilot đến Lộ trình tích hợp SDLC toàn diện</p>
+                    
+                    <div class="anim-el delay-4" style="display: flex; gap: 50px; font-size: 18px;">
+                        <div style="display: flex; align-items: center; background: #fff5f5; padding: 10px 20px; border-radius: 30px; color: var(--msb-red); font-weight: 500; box-shadow: var(--shadow-soft);">
+                            <i class="far fa-calendar-alt" style="margin-right:10px;"></i> Tháng 12/2025
+                        </div>
+                        <div style="display: flex; align-items: center; background: #fff5f5; padding: 10px 20px; border-radius: 30px; color: var(--msb-orange); font-weight: 500; box-shadow: var(--shadow-soft);">
+                            <i class="fas fa-users-cog" style="margin-right:10px;"></i> Đơn vị: AI Team (R&D)
+                        </div>
+                    </div>
+                </div>
+                <div class="anim-el" style="flex: 1; height: 100%; background: url('https://img.freepik.com/free-vector/gradient-network-connection-background_23-2148879890.jpg') center/cover; position: absolute; right: 0; top: 0; width: 55%; z-index: 1;"></div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-2">
+            <div class="slide-header anim-el">
+                <div class="header-title">Nội dung chính</div>
+                <div class="header-logo">MSB</div>
+            </div>
+            <div class="slide-content grid-2">
+                <div style="display: flex; flex-direction: column; justify-content: center;">
+                    <ul class="anim-el delay-1" style="list-style: none; padding: 0; font-size: 22px; font-family: 'Montserrat', sans-serif;">
+                        <li class="card" style="padding: 25px; margin-bottom: 25px; display: flex; align-items: center; border-left: 5px solid var(--msb-red);">
+                            <span style="font-size: 40px; font-weight: 900; color: var(--msb-red); margin-right: 25px; opacity: 0.8;">01</span>
+                            Tổng quan & Sự dịch chuyển SDLC
+                        </li>
+                        <li class="card" style="padding: 25px; margin-bottom: 25px; display: flex; align-items: center; border-left: 5px solid var(--msb-orange);">
+                            <span style="font-size: 40px; font-weight: 900; color: var(--msb-orange); margin-right: 25px; opacity: 0.8;">02</span>
+                            Phân tích & So sánh các công cụ AI
+                        </li>
+                        <li class="card" style="padding: 25px; margin-bottom: 25px; display: flex; align-items: center; border-left: 5px solid var(--msb-red);">
+                            <span style="font-size: 40px; font-weight: 900; color: var(--msb-red); margin-right: 25px; opacity: 0.8;">03</span>
+                            Kết quả Pilot Tabby tại MSB (Chi tiết)
+                        </li>
+                        <li class="card" style="padding: 25px; display: flex; align-items: center; border-left: 5px solid var(--msb-orange);">
+                            <span style="font-size: 40px; font-weight: 900; color: var(--msb-orange); margin-right: 25px; opacity: 0.8;">04</span>
+                            Chiến lược & Lộ trình triển khai
+                        </li>
+                    </ul>
+                </div>
+                <div class="anim-el delay-2 flex-center" style="height: 100%; display: flex; justify-content: center; align-items: center;">
+                    <i class="fas fa-list-alt" style="font-size: 300px; background: var(--msb-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; opacity: 0.1;"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-3">
+            <div class="slide-header anim-el">
+                <div class="header-title">1. Sự tiến hóa của Quy trình (SDLC)</div>
+                <div class="header-logo">MSB</div>
+            </div>
+            <div class="slide-content">
+                <p class="anim-el delay-1" style="font-size: 20px; margin-bottom: 40px; text-align: center; max-width: 800px; margin-left: auto; margin-right: auto;">AI không loại bỏ lập trình viên, mà thay đổi căn bản cách phân bổ nỗ lực (Effort) trong quy trình phát triển phần mềm.</p>
+                
+                <div class="grid-3 anim-el delay-2" style="align-items: stretch;">
+                    <div class="card" style="border-top: 5px solid #6c757d; text-align: center;">
+                        <div style="background: #f8f9fa; width: 80px; height: 80px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 20px;">
+                             <i class="fas fa-laptop-code" style="font-size: 40px; color: #6c757d;"></i>
+                        </div>
+                        <h3>Traditional SDLC</h3>
+                        <p>Mô hình truyền thống, tập trung phần lớn thời gian vào việc viết mã thủ công (Implementation).</p>
+                        <div class="badge" style="background: #6c757d; font-size: 16px; padding: 8px 15px; margin-top: 15px;">Focus: Coding (Gõ code)</div>
+                    </div>
+                    <div class="card" style="border-top: 5px solid var(--msb-orange); text-align: center; transform: scale(1.05); z-index: 2;">
+                        <div style="background: #fff5f0; width: 80px; height: 80px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 20px;">
+                            <i class="fas fa-comments" style="font-size: 40px; color: var(--msb-orange);"></i>
+                        </div>
+                        <h3>AI-Assisted (Vibe)</h3>
+                        <p>Sử dụng Chatbot (Copilot/Gemini) để gợi ý code nhanh. Giảm coding, nhưng tăng thời gian debug lỗi.</p>
+                        <div class="badge" style="background: var(--msb-orange); font-size: 16px; padding: 8px 15px; margin-top: 15px;">Focus: Debugging & Prompting</div>
+                    </div>
+                    <div class="card" style="border-top: 5px solid #0d6efd; text-align: center;">
+                        <div style="background: #e7f1ff; width: 80px; height: 80px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 20px;">
+                            <i class="fas fa-robot" style="font-size: 40px; color: #0d6efd;"></i>
+                        </div>
+                        <h3>Spec-Driven (Agentic)</h3>
+                        <p>AI tự động thực hiện coding dựa trên đặc tả kỹ thuật (Specs). Con người tập trung vào thiết kế và kiểm thử.</p>
+                        <div class="badge" style="background: #0d6efd; font-size: 16px; padding: 8px 15px; margin-top: 15px;">Focus: Design & Review</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-4">
+             <div class="slide-header anim-el">
+                <div class="header-title">Dữ liệu hóa: Sự dịch chuyển Nỗ lực (Effort Shift)</div>
+                <div class="header-logo">MSB</div>
+            </div>
+            <div class="slide-content grid-2">
+                <div class="anim-el delay-1">
+                    <h3>Phân tích sự thay đổi</h3>
+                    <p>Biểu đồ bên cạnh minh họa sự thay đổi tỷ trọng thời gian giữa các giai đoạn khi áp dụng các mức độ AI khác nhau.</p>
+                    <ul style="font-size: 18px; padding-right: 20px;">
+                        <li class="card" style="padding: 15px; margin-bottom: 15px; border-left: 4px solid #fd7e14;"><strong>Xu hướng rõ rệt:</strong> Thời gian cho "Coding/Implementation" (màu cam) giảm mạnh.</li>
+                        <li class="card" style="padding: 15px; margin-bottom: 15px; border-left: 4px solid #dc3545;"><strong>Yêu cầu mới:</strong> Thời gian cho "Design/Specs" (màu đỏ) và "Review/Verify" (màu xanh) tăng lên đáng kể.</li>
+                        <li class="card" style="padding: 15px; background: #f8f9fa;"><strong>Kết luận:</strong> Lập trình viên cần chuyển dịch kỹ năng từ "thợ code" sang "kiến trúc sư" và "kiểm thử viên cấp cao".</li>
+                    </ul>
+                </div>
+                <div class="chart-box anim-el delay-2">
+                    <canvas id="effortShiftChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-5">
+            <div class="slide-header anim-el">
+                <div class="header-title">2. Bức tranh thị trường công cụ AI (Market Map)</div>
+                <div class="header-logo">MSB</div>
+            </div>
+            <div class="slide-content">
+                <p class="anim-el delay-1" style="text-align: center; max-width: 900px; margin: 0 auto 30px;">Phân loại các công cụ dựa trên 2 trục quan trọng nhất đối với Ngân hàng: <strong style="color:var(--msb-red)">Trí thông minh (Capability)</strong> và <strong style="color:#198754">An toàn dữ liệu (Data Privacy)</strong>.</p>
+                <div class="chart-box anim-el delay-2" style="height: 500px;">
+                    <canvas id="marketBubbleChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-6">
+            <div class="slide-header anim-el">
+                <div class="header-title">Phân nhóm 1: Cloud Assistants & Agentic AI</div>
+                <div class="header-logo">MSB</div>
+            </div>
+            <div class="slide-content grid-2">
+                <div class="card anim-el delay-1">
+                    <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                        <i class="fab fa-github" style="font-size: 40px; margin-right: 15px;"></i>
+                        <h3 style="margin: 0;">GitHub Copilot (Cloud Leader)</h3>
+                    </div>
+                    <p>Công cụ phổ biến nhất, tích hợp sâu vào IDE.</p>
+                    <ul>
+                        <li><strong>Model:</strong> GPT-4o (Rất thông minh).</li>
+                        <li><strong>Ưu điểm:</strong> Trải nghiệm mượt mà, gợi ý chính xác cao cho các ngôn ngữ phổ biến.</li>
+                        <li style="background: #fff5f5; padding: 10px; border-radius: 8px; color: var(--msb-red);"><strong>Rủi ro chí mạng:</strong> Dữ liệu code được gửi lên Cloud của Microsoft (Azure). Không phù hợp cho dự án Core Banking.</li>
+                    </ul>
+                </div>
+                <div class="card anim-el delay-2">
+                     <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                        <i class="fas fa-brain" style="font-size: 40px; color: var(--msb-orange); margin-right: 15px;"></i>
+                        <h3 style="margin: 0;">Agentic AI (Kiro / LunaBase)</h3>
+                    </div>
+                    <p>Thế hệ AI mới, tự chủ thực hiện tác vụ phức tạp.</p>
+                     <ul>
+                        <li><strong>Cách hoạt động:</strong> Đọc file requirements.md -> Lập kế hoạch (plan) -> Tự tạo file và viết code.</li>
+                        <li><strong>Ưu điểm:</strong> Tự động hóa cao cho dự án mới (Greenfield).</li>
+                        <li><strong>Hạn chế:</strong> Khó áp dụng cho các hệ thống legacy (cũ) đồ sộ. Chi phí cao.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-7">
+            <div class="slide-header anim-el">
+                <div class="header-title">Bảng so sánh chi tiết 5 giải pháp</div>
+                <div class="header-logo">MSB</div>
+            </div>
+            <div class="slide-content anim-el delay-1">
+                <table class="clean-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">Tiêu chí</th>
+                            <th style="width: 17%;">GitHub Copilot</th>
+                            <th style="width: 17%;">Google Gemini</th>
+                            <th style="width: 17%; background: var(--msb-orange);">Tabby (MSB Pilot)</th>
+                            <th style="width: 17%;">AWS Kiro Agent</th>
+                            <th style="width: 17%;">LunaBase</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Loại hình</strong></td>
+                            <td>Cloud SaaS</td>
+                            <td>Cloud SaaS</td>
+                            <td class="highlight-row">Self-hosted (On-Prem)</td>
+                            <td>Cloud Agent</td>
+                            <td>Hybrid Agent</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Bảo mật Data</strong></td>
+                            <td style="color: var(--msb-red); font-weight: bold;">❌ Cloud (Rủi ro cao)</td>
+                            <td style="color: var(--msb-red); font-weight: bold;">❌ Cloud (Rủi ro cao)</td>
+                            <td class="highlight-row" style="color: #198754;">✅ Tuyệt đối (Nội bộ)</td>
+                            <td style="color: #F06E1D; font-weight: bold;">⚠️ Cloud (Có cam kết)</td>
+                            <td style="color: #198754;">✅ Có bản On-Prem</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Mô hình (LLM)</strong></td>
+                            <td>GPT-4o (Rất mạnh)</td>
+                            <td>Gemini 1.5 Pro (Context lớn)</td>
+                            <td class="highlight-row">CodeLlama / StarCoder<br>(Open Source - Khá)</td>
+                            <td>Claude 3.5 Sonnet (Thông minh)</td>
+                            <td>Multi-Models</td>
+                        </tr>
+                         <tr>
+                            <td><strong>Phương pháp</strong></td>
+                            <td>Chat / Autocomplete</td>
+                            <td>Chat / Context lớn</td>
+                            <td class="highlight-row">Autocomplete (Chủ yếu)</td>
+                            <td><strong>Spec-Driven</strong></td>
+                            <td><strong>Spec-Driven</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Chi phí</strong></td>
+                            <td>$$ (License/user)</td>
+                            <td>Free (Hiện tại)</td>
+                            <td class="highlight-row">$ (Hạ tầng GPU)</td>
+                            <td>$$$ (Usage based)</td>
+                            <td>$$$$ (Enterprise)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+         <div class="slide" id="slide-8">
+            <div class="slide-header anim-el">
+                <div class="header-title">Đánh giá năng lực đa chiều (Radar Chart)</div>
+                <div class="header-logo">MSB</div>
+            </div>
+            <div class="slide-content grid-2">
+                <div class="anim-el delay-1">
+                    <h3>Các tiêu chí đánh giá:</h3>
+                    <ul style="margin-bottom: 30px;">
+                        <li class="card" style="padding: 15px; margin-bottom: 10px;"><strong>IQ Code:</strong> Độ thông minh, khả năng giải quyết logic phức tạp.</li>
+                        <li class="card" style="padding: 15px; margin-bottom: 10px;"><strong>Security:</strong> Mức độ an toàn dữ liệu, khả năng triển khai nội bộ.</li>
+                        <li class="card" style="padding: 15px; margin-bottom: 10px;"><strong>Context (RAG):</strong> Khả năng hiểu ngữ cảnh toàn bộ dự án (nhiều file).</li>
+                    </ul>
+                    <div class="card card-highlight">
+                        <strong>Nhận định:</strong>
+                        <p>GitHub Copilot (màu xám) là công cụ toàn diện nhất về tính năng và IQ. Tuy nhiên, <strong>Tabby (màu đỏ)</strong> là lựa chọn duy nhất đạt điểm tối đa về Security - yếu tố sống còn của Ngân hàng.</p>
+                    </div>
+                </div>
+                <div class="chart-box anim-el delay-2">
+                    <canvas id="radarAssessmentChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-9">
+            <div class="slide-header anim-el">
+                <div class="header-title">Tại sao chọn Tabby? Kiến trúc triển khai</div>
+                <div class="header-logo">MSB</div>
+            </div>
+            <div class="slide-content grid-2">
+                <div class="anim-el delay-1">
+                    <h3 style="color: var(--msb-red); font-size: 28px;">Giải pháp "Pháo đài số"</h3>
+                    <p>Tabby được lựa chọn cho giai đoạn Pilot vì đây là giải pháp Open-source cho phép <strong>Self-hosted hoàn toàn</strong>.</p>
+                    <ul class="card" style="padding: 30px; border-left: 5px solid var(--msb-red);">
+                        <li><strong>Zero Data Egress:</strong> Không có bất kỳ dòng code nào đi ra khỏi mạng nội bộ MSB.</li>
+                        <li><strong>Tự chủ công nghệ:</strong> MSB tự quản lý Server, lựa chọn và tinh chỉnh Model.</li>
+                        <li><strong>Tích hợp nội bộ:</strong> Tiềm năng kết nối với GitLab/Confluence nội bộ để làm giàu ngữ cảnh (RAG).</li>
+                    </ul>
+                </div>
+                <div class="anim-el delay-2 card" style="display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f8f9fa; border: 2px dashed #ccc;">
+                    
+                    <div style="display: flex; gap: 30px; width: 90%; justify-content: space-around; align-items: center;">
+                         <div style="background: white; border: 2px solid #0d6efd; padding: 20px; border-radius: 12px; text-align: center; box-shadow: var(--shadow-soft);">
+                            <i class="fas fa-laptop-code" style="font-size: 40px; color: #0d6efd; margin-bottom: 10px;"></i><br>
+                            <strong>Developer PC</strong><br>(VSCode + Tabby Plugin)
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center; color: #198754; font-size: 18px; font-weight: bold;">
+                            <i class="fas fa-exchange-alt" style="font-size: 30px; margin-bottom: 5px;"></i>
+                            LAN Secure
+                        </div>
+                        <div style="background: #fff5f5; border: 2px solid var(--msb-red); padding: 20px; border-radius: 12px; text-align: center; box-shadow: var(--shadow-soft);">
+                            <i class="fas fa-server" style="font-size: 40px; color: var(--msb-red); margin-bottom: 10px;"></i><br>
+                            <strong>MSB AI Server</strong><br>(Tabby + GPU + Model)
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 40px; width: 90%; border-top: 4px dotted var(--msb-red); padding-top: 30px; position: relative; text-align: center;">
+                        <div style="position: absolute; top: -16px; left: 50%; transform: translateX(-50%); background: var(--msb-red); color: white; padding: 5px 20px; border-radius: 20px; font-weight: bold; box-shadow: var(--shadow-soft); display: flex; align-items: center;"><i class="fas fa-shield-alt" style="margin-right: 10px;"></i> BANK FIREWALL - BLOCKED</div>
+                         <div style="color: #999; opacity: 0.5;">
+                            <i class="fas fa-cloud" style="font-size: 60px; margin-bottom: 10px;"></i><br>
+                            Public Internet / Cloud (OpenAI, Google...)
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-10">
+            <div class="slide-header anim-el">
+                <div class="header-title">3. Kết quả Pilot Tabby: Tổng quan</div>
+                <div class="header-logo">MSB</div>
+            </div>
+            <div class="slide-content">
+                <div class="grid-3 anim-el delay-1" style="margin-bottom: 40px;">
+                    <div class="card" style="text-align: center; border-bottom: 5px solid var(--msb-red);">
+                        <i class="fas fa-project-diagram" style="font-size: 60px; color: var(--msb-red); margin-bottom: 20px; opacity: 0.2;"></i>
+                        <div style="font-size: 54px; font-family: 'Montserrat', sans-serif; font-weight: 900; color: var(--text-primary); line-height: 1;">03</div>
+                        <div style="font-size: 20px; color: var(--text-secondary); font-weight: 500;">Dự án tham gia<br>(Java, Node.js, .NET)</div>
+                    </div>
+                    <div class="card" style="text-align: center; border-bottom: 5px solid var(--msb-orange);">
+                        <i class="fas fa-users" style="font-size: 60px; color: var(--msb-orange); margin-bottom: 20px; opacity: 0.2;"></i>
+                        <div style="font-size: 54px; font-family: 'Montserrat', sans-serif; font-weight: 900; color: var(--text-primary); line-height: 1;">15</div>
+                        <div style="font-size: 20px; color: var(--text-secondary); font-weight: 500;">Lập trình viên<br>sử dụng hàng ngày</div>
+                    </div>
+                    <div class="card" style="text-align: center; border-bottom: 5px solid #0d6efd;">
+                         <i class="fas fa-bolt" style="font-size: 60px; color: #0d6efd; margin-bottom: 20px; opacity: 0.2;"></i>
+                        <div style="font-size: 54px; font-family: 'Montserrat', sans-serif; font-weight: 900; color: var(--text-primary); line-height: 1;">12,500+</div>
+                        <div style="font-size: 20px; color: var(--text-secondary); font-weight: 500;">Requests gợi ý code<br>(Trong 3 tháng)</div>
+                    </div>
+                </div>
+                <div class="card card-highlight anim-el delay-2">
+                    <h3 style="margin-top: 0;">Hạ tầng thử nghiệm:</h3>
+                    <ul style="display: flex; justify-content: space-around; list-style: none; padding: 0;">
+                        <li style="display: flex; align-items: center;"><i class="fas fa-server" style="color: var(--msb-red); margin-right: 10px; font-size: 24px;"></i> <strong>Server:</strong> 32 Core CPU, 128GB RAM</li>
+                        <li style="display: flex; align-items: center;"><i class="fas fa-microchip" style="color: var(--msb-orange); margin-right: 10px; font-size: 24px;"></i> <strong>GPU:</strong> 02 x NVIDIA A4000</li>
+                        <li style="display: flex; align-items: center;"><i class="fas fa-brain" style="color: #0d6efd; margin-right: 10px; font-size: 24px;"></i> <strong>Model:</strong> CodeLlama-13B-Instruct</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-11">
+            <div class="slide-header anim-el">
+                <div class="header-title">Dữ liệu định lượng: Hiệu quả hoạt động</div>
+                <div class="header-logo">MSB</div>
+            </div>
+            <div class="slide-content grid-2">
+                <div class="card anim-el delay-1">
+                    <h3 style="text-align: center;">Tỷ lệ chấp nhận code (Acceptance Rate)</h3>
+                    <p style="text-align: center; font-size: 14px; color: var(--text-secondary);">So sánh Tabby (MSB) với trung bình ngành của Copilot.</p>
+                    <div class="chart-box" style="min-height: 300px; box-shadow: none;">
+                        <canvas id="acceptanceRateChart"></canvas>
+                    </div>
+                    <div style="text-align: center; font-weight: bold; margin-top: 15px; color: var(--msb-red); font-size: 18px;">Tabby đạt ~28%, mức khá tốt cho model tự vận hành.</div>
+                </div>
+                <div class="card anim-el delay-2">
+                    <h3 style="text-align: center;">Thời gian tiết kiệm (Ước tính của Dev)</h3>
+                    <p style="text-align: center; font-size: 14px; color: var(--text-secondary);">Khảo sát: "AI giúp bạn tiết kiệm bao nhiêu thời gian coding?"</p>
+                    <div class="chart-box" style="min-height: 300px; box-shadow: none;">
+                        <canvas id="timeSavingsChart"></canvas>
+                    </div>
+                     <div style="text-align: center; font-weight: bold; margin-top: 15px; color: #198754; font-size: 18px;">70% Dev thấy tiết kiệm được thời gian đáng kể.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-12">
+            <div class="slide-header anim-el">
+                <div class="header-title">Chi tiết: Hiệu quả theo Ngôn ngữ lập trình</div>
+                <div class="header-logo">MSB</div>
+            </div>
+            <div class="slide-content grid-2">
+                <div class="anim-el delay-1">
+                    <h3>Phân tích hiệu quả ngôn ngữ</h3>
+                    <p style="margin-bottom: 25px;">Mô hình AI không giỏi đều ở mọi ngôn ngữ. Dữ liệu Pilot cho thấy sự chênh lệch rõ rệt.</p>
+                    
+                    <div class="card" style="border-left: 5px solid #198754; margin-bottom: 20px;">
+                        <div style="font-weight: bold; font-size: 20px; color: #198754; display: flex; justify-content: space-between;">
+                            JavaScript / Node.js <span>35%+</span>
+                        </div>
+                        <p style="margin: 5px 0;">Hiệu quả cao nhất. Rất tốt cho Frontend/BFF.</p>
+                    </div>
+                    <div class="card" style="border-left: 5px solid #F06E1D; margin-bottom: 20px;">
+                         <div style="font-weight: bold; font-size: 20px; color: #F06E1D; display: flex; justify-content: space-between;">
+                            Java (Spring Boot) <span>28%</span>
+                        </div>
+                        <p style="margin: 5px 0;">Mức trung bình khá. Tốt cho DTO, Entity, boilerplate.</p>
+                    </div>
+                    <div class="card" style="border-left: 5px solid #E41E26;">
+                         <div style="font-weight: bold; font-size: 20px; color: #E41E26; display: flex; justify-content: space-between;">
+                            C# (.NET Core) <span>20%</span>
+                        </div>
+                        <p style="margin: 5px 0;">Thấp nhất. Model CodeLlama ít được tối ưu cho .NET.</p>
+                    </div>
+                </div>
+                <div class="chart-box anim-el delay-2">
+                    <canvas id="languageBreakdownChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-13">
+            <div class="slide-header anim-el">
+                <div class="header-title">Phản hồi định tính (Developer Feedback Heatmap)</div>
+                <div class="header-logo">MSB</div>
+            </div>
+            <div class="slide-content anim-el delay-1">
+                 <p style="text-align: center; max-width: 800px; margin: 0 auto 30px;">Tổng hợp đánh giá mức độ hài lòng của đội ngũ phát triển đối với các khía cạnh của Tabby.</p>
+                <table class="clean-table" style="text-align: center;">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; width: 30%;">Khía cạnh đánh giá</th>
+                            <th>Team Java</th>
+                            <th>Team Node.js</th>
+                            <th>Team .NET</th>
+                            <th>Trung bình</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="text-align: left;"><strong>Tốc độ phản hồi (Latency)</strong><br><small style="color: #999;">Thời gian chờ gợi ý hiện ra</small></td>
+                            <td class="heat-mid">Khá (800ms)</td>
+                            <td class="heat-high">Tốt (600ms)</td>
+                            <td class="heat-mid">Khá (800ms)</td>
+                            <td class="heat-mid" style="font-weight: bold;">Chấp nhận được</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: left;"><strong>Độ chính xác (Code Boilerplate)</strong><br><small style="color: #999;">Code lặp lại, getter/setter, mapping</small></td>
+                            <td class="heat-high">Rất tốt</td>
+                            <td class="heat-high">Rất tốt</td>
+                            <td class="heat-high">Tốt</td>
+                            <td class="heat-high" style="font-weight: bold;">Điểm mạnh nhất</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: left;"><strong>Độ chính xác (Business Logic)</strong><br><small style="color: #999;">Xử lý nghiệp vụ phức tạp</small></td>
+                            <td class="heat-low">Kém</td>
+                            <td class="heat-mid">Trung bình</td>
+                            <td class="heat-low">Kém</td>
+                            <td class="heat-low" style="font-weight: bold;">Hạn chế lớn</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: left;"><strong>Trải nghiệm IDE Plugin</strong></td>
+                            <td class="heat-mid">Ổn định</td>
+                            <td class="heat-high">Mượt mà</td>
+                            <td class="heat-low">Hay lỗi kết nối</td>
+                            <td class="heat-mid" style="font-weight: bold;">Cần cải thiện</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: left;"><strong>Cảm giác An toàn bảo mật</strong></td>
+                            <td class="heat-high">Tuyệt đối</td>
+                            <td class="heat-high">Tuyệt đối</td>
+                            <td class="heat-high">Tuyệt đối</td>
+                            <td class="heat-high" style="font-weight: bold;">Điểm cộng lớn nhất</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-14">
+            <div class="slide-header anim-el">
+                <div class="header-title">Tổng kết các phát hiện chính sau Pilot</div>
+                <div class="header-logo">MSB</div>
+            </div>
+            <div class="slide-content grid-2">
+                 <div class="card anim-el delay-1" style="background: linear-gradient(to bottom right, #f0fff4, #fff); border-top: 5px solid #198754;">
+                    <h3 style="color: #198754; display: flex; align-items: center;"><i class="fas fa-check-circle" style="margin-right: 10px;"></i> Những điều ĐÃ làm được</h3>
+                    <ul style="font-size: 18px; line-height: 1.8;">
+                        <li><strong>Chứng minh tính khả thi kỹ thuật:</strong> Triển khai thành công mô hình LLM 13B params trên hạ tầng nội bộ MSB.</li>
+                        <li><strong>An toàn thông tin:</strong> Kiểm soát hoàn toàn luồng dữ liệu, không có rò rỉ ra Internet.</li>
+                        <li><strong>Hiệu quả bước đầu:</strong> Giảm tải công việc nhàm chán (boilerplate) cho lập trình viên.</li>
+                        <li><strong>Tâm lý:</strong> Đội ngũ dev cởi mở và hào hứng với công nghệ mới khi biết nó an toàn.</li>
+                    </ul>
+                </div>
+                <div class="card anim-el delay-2" style="background: linear-gradient(to bottom right, #fff5f5, #fff); border-top: 5px solid var(--msb-red);">
+                    <h3 style="color: var(--msb-red); display: flex; align-items: center;"><i class="fas fa-exclamation-triangle" style="margin-right: 10px;"></i> Những hạn chế & Thách thức</h3>
+                    <ul style="font-size: 18px; line-height: 1.8;">
+                        <li><strong>IQ giới hạn:</strong> Model Open-source 13B kém xa GPT-4 trong việc hiểu các logic phức tạp.</li>
+                        <li><strong>Thiếu ngữ cảnh (Lack of Context):</strong> Tabby hiện tại chưa hiểu được cấu trúc toàn bộ dự án.</li>
+                        <li><strong>Tài nguyên phần cứng:</strong> Cần đầu tư thêm GPU mạnh hơn (A100/H100) để mở rộng diện rộng.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+         <div class="slide" id="slide-15">
+            <div class="slide-header anim-el">
+                <div class="header-title">4. Chiến lược & Lộ trình: Phân vùng Bảo mật</div>
+                <div class="header-logo">MSB</div>
+            </div>
+            <div class="slide-content anim-el delay-1">
+                <p style="text-align: center; max-width: 800px; margin: 0 auto 30px;">Áp dụng chính sách "Đèn Giao Thông" để quản lý rủi ro khi sử dụng AI.</p>
+                <table class="clean-table" style="border-collapse: separate; border-spacing: 0 15px; background: transparent; box-shadow: none;">
+                    <thead>
+                        <tr>
+                            <th style="background: #2c3e50; border-radius: 8px 0 0 8px;">Vùng dữ liệu</th>
+                            <th style="background: #2c3e50;">Mô tả & Phạm vi</th>
+                            <th style="background: #2c3e50;">Công cụ AI được phép</th>
+                            <th style="background: #2c3e50; border-radius: 0 8px 8px 0;">Chính sách kiểm soát</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="card" style="background: #fff5f5; border-left: 8px solid var(--msb-red); transform: scale(1);">
+                            <td style="font-family: 'Montserrat', sans-serif;"><strong style="color: var(--msb-red); font-size: 20px; display: flex; align-items: center;"><i class="fas fa-stop-circle" style="margin-right: 10px;"></i> VÙNG ĐỎ (Cao)</strong></td>
+                            <td>
+                                <strong>Core Banking, Dữ liệu KHTN, Thẻ.</strong><br>
+                                Chứa PII, dữ liệu tài chính nhạy cảm.
+                            </td>
+                            <td>
+                                <span class="badge" style="background: var(--msb-red); font-size: 16px; padding: 10px 20px;">CHỈ DÙNG Tabby (On-Prem)</span>
+                            </td>
+                            <td>
+                                <ul>
+                                    <li>Mạng cách ly (Air-gapped).</li>
+                                    <li>Cấm tuyệt đối copy-paste ra internet.</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr class="card" style="background: #fffbeb; border-left: 8px solid #f1c40f; transform: scale(1);">
+                            <td style="font-family: 'Montserrat', sans-serif;"><strong style="color: #b48605; font-size: 20px; display: flex; align-items: center;"><i class="fas fa-exclamation-circle" style="margin-right: 10px;"></i> VÙNG VÀNG (TB)</strong></td>
+                            <td>
+                                <strong>Ứng dụng nội bộ, Middleware.</strong><br>
+                                Không chứa data thật, chứa logic nghiệp vụ.
+                            </td>
+                            <td>
+                                <span class="badge" style="background: var(--msb-red);">Tabby (Ưu tiên)</span><br>
+                                <span class="badge" style="background: #b48605; margin-top: 5px;">Copilot Business (Có kiểm soát)</span>
+                            </td>
+                            <td>
+                                <ul>
+                                    <li>Dùng license doanh nghiệp.</li>
+                                    <li>Audit log định kỳ.</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr class="card" style="background: #f0fff4; border-left: 8px solid #198754; transform: scale(1);">
+                            <td style="font-family: 'Montserrat', sans-serif;"><strong style="color: #198754; font-size: 20px; display: flex; align-items: center;"><i class="fas fa-check-circle" style="margin-right: 10px;"></i> VÙNG XANH (Thấp)</strong></td>
+                            <td>
+                                <strong>Frontend Public, Open-Source Libs.</strong><br>
+                                Dữ liệu công khai.
+                            </td>
+                            <td>
+                                <span class="badge" style="background: #198754;">Tự do (Copilot, Gemini...)</span>
+                            </td>
+                            <td>
+                                <ul>
+                                    <li>Khuyến khích thử nghiệm.</li>
+                                    <li>Review code kỹ lưỡng.</li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-16">
+            <div class="slide-header anim-el">
+                <div class="header-title">Lộ trình triển khai chi tiết (Roadmap)</div>
+                <div class="header-logo">MSB</div>
+            </div>
+            <div class="slide-content anim-el delay-1">
+                <div style="display: flex; gap: 30px; height: 100%; padding: 20px 0;">
+                    
+                    <div class="card" style="flex: 1; border-top: 6px solid var(--msb-red); display: flex; flex-direction: column; position: relative; overflow: hidden;">
+                        <div style="position: absolute; top: 0; right: 0; font-size: 150px; color: var(--msb-red); opacity: 0.05; z-index: 0;"><i class="fas fa-rocket"></i></div>
+                        <div style="font-family: 'Montserrat', sans-serif; font-size: 26px; font-weight: 900; color: var(--msb-red); margin-bottom: 10px; z-index: 1;">Giai đoạn 1: Nền tảng</div>
+                        <div style="font-weight: bold; margin-bottom: 30px; color: var(--text-secondary); display: flex; align-items: center; z-index: 1;"><i class="far fa-calendar-alt" style="margin-right: 10px;"></i> Hiện tại - Q2/2026</div>
+                        <ul style="flex: 1; font-size: 18px; z-index: 1;">
+                            <li><strong>Mục tiêu:</strong> Ổn định hệ thống Tabby On-prem và mở rộng phạm vi sử dụng.</li>
+                            <li style="margin-top: 20px;"><strong>Hành động chính:</strong>
+                                <ul>
+                                    <li>Nâng cấp GPU (Đề xuất 2x A100).</li>
+                                    <li>Mở rộng lên 50+ developers.</li>
+                                    <li>Đào tạo Prompt Engineering.</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                     <div class="card" style="flex: 1; border-top: 6px solid var(--msb-orange); display: flex; flex-direction: column; position: relative; overflow: hidden;">
+                         <div style="position: absolute; top: 0; right: 0; font-size: 150px; color: var(--msb-orange); opacity: 0.05; z-index: 0;"><i class="fas fa-network-wired"></i></div>
+                        <div style="font-family: 'Montserrat', sans-serif; font-size: 26px; font-weight: 900; color: var(--msb-orange); margin-bottom: 10px; z-index: 1;">Giai đoạn 2: Tích hợp RAG</div>
+                        <div style="font-weight: bold; margin-bottom: 30px; color: var(--text-secondary); display: flex; align-items: center; z-index: 1;"><i class="far fa-calendar-alt" style="margin-right: 10px;"></i> Q3/2026 - Q4/2026</div>
+                        <ul style="flex: 1; font-size: 18px; z-index: 1;">
+                            <li><strong>Mục tiêu:</strong> Làm cho AI hiểu ngữ cảnh nghiệp vụ của MSB.</li>
+                            <li style="margin-top: 20px;"><strong>Hành động chính:</strong>
+                                <ul>
+                                    <li>Kết nối Tabby với Confluence/GitLab nội bộ.</li>
+                                    <li>Thử nghiệm mô hình Hybrid (Vùng Xanh).</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+
+                     <div class="card" style="flex: 1; border-top: 6px solid #0d6efd; display: flex; flex-direction: column; position: relative; overflow: hidden;">
+                         <div style="position: absolute; top: 0; right: 0; font-size: 150px; color: #0d6efd; opacity: 0.05; z-index: 0;"><i class="fas fa-robot"></i></div>
+                        <div style="font-family: 'Montserrat', sans-serif; font-size: 26px; font-weight: 900; color: #0d6efd; margin-bottom: 10px; z-index: 1;">Giai đoạn 3: Agentic AI</div>
+                        <div style="font-weight: bold; margin-bottom: 30px; color: var(--text-secondary); display: flex; align-items: center; z-index: 1;"><i class="far fa-calendar-alt" style="margin-right: 10px;"></i> 2027+</div>
+                        <ul style="flex: 1; font-size: 18px; z-index: 1;">
+                            <li><strong>Mục tiêu:</strong> Chuyển dịch sang mô hình Spec-Driven Development.</li>
+                            <li style="margin-top: 20px;"><strong>Hành động chính:</strong>
+                                <ul>
+                                    <li>Pilot AI Agent cho dự án mới.</li>
+                                    <li>Xây dựng văn hóa "AI-First".</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-17">
+            <div class="slide-header anim-el">
+                <div class="header-title">Khuyến nghị cho Ban Lãnh Đạo</div>
+                <div class="header-logo">MSB</div>
+            </div>
+            <div class="slide-content grid-3 anim-el delay-1">
+                <div class="card card-highlight" style="text-align: center; padding: 40px 30px;">
+                    <div style="width: 80px; height: 80px; background: #fff5f5; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 25px;">
+                        <i class="fas fa-file-signature" style="font-size: 40px; color: var(--msb-red);"></i>
+                    </div>
+                    <h3>1. Phê duyệt Chính sách</h3>
+                    <p>Ban hành quy định phân loại dữ liệu và vùng sử dụng AI (Traffic Light Protocol) để tạo hành lang pháp lý rõ ràng.</p>
+                </div>
+                <div class="card card-highlight" style="text-align: center; padding: 40px 30px;">
+                    <div style="width: 80px; height: 80px; background: #fff5f0; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 25px;">
+                        <i class="fas fa-server" style="font-size: 40px; color: var(--msb-orange);"></i>
+                    </div>
+                    <h3>2. Đầu tư Hạ tầng GPU</h3>
+                    <p>Phê duyệt ngân sách nâng cấp server GPU nội bộ. Đây là tài sản chiến lược để sở hữu năng lực AI riêng.</p>
+                </div>
+                 <div class="card card-highlight" style="text-align: center; padding: 40px 30px;">
+                    <div style="width: 80px; height: 80px; background: #e7f1ff; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 25px;">
+                        <i class="fas fa-user-graduate" style="font-size: 40px; color: #0d6efd;"></i>
+                    </div>
+                    <h3>3. Chuyển đổi Con người</h3>
+                    <p>Tổ chức đào tạo diện rộng về kỹ năng làm việc với AI (Prompting, Reviewing) và tư duy thiết kế (Spec-Driven).</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-18" style="padding: 0;">
+            <div style="height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: url('https://img.freepik.com/free-vector/gradient-network-connection-background_23-2148879890.jpg') center/cover;">
+                <div class="anim-el delay-1 card" style="text-align: center; padding: 60px 80px; border: none; box-shadow: 0 30px 60px rgba(0,0,0,0.15);">
+                    <div style="font-size: 120px; background: var(--msb-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px;">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <h1 style="font-size: 100px; margin-bottom: 20px; font-family: 'Montserrat', sans-serif;">Q & A</h1>
+                    <p style="font-size: 32px; color: var(--text-secondary); font-weight: 300;">Cảm ơn Quý Lãnh đạo đã lắng nghe.</p>
+                    <div style="margin-top: 60px; font-size: 22px; color: var(--text-primary); display: flex; flex-direction: column; gap: 15px;">
+                        <div style="display: flex; align-items: center; justify-content: center;"><i class="fas fa-users" style="color: var(--msb-red); margin-right: 15px;"></i> AI Team - Khối Công nghệ Thông tin</div>
+                        <div style="display: flex; align-items: center; justify-content: center;"><i class="fas fa-envelope" style="color: var(--msb-orange); margin-right: 15px;"></i> aiteam@msb.com.vn</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="controls">
+        <button class="btn-nav" id="prevBtn" onclick="changeSlide(-1)"><i class="fas fa-chevron-left"></i> Trước</button>
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="slide-counter">
+            <span id="currentSlide" style="color: var(--msb-red); font-size: 24px;">1</span> / <span id="totalSlides">18</span>
+        </div>
+        <button class="btn-nav" id="nextBtn" onclick="changeSlide(1)">Tiếp theo <i class="fas fa-chevron-right"></i></button>
+    </div>
+
+    <script>
+        // === SLIDE NAVIGATION LOGIC ===
+        let currentSlideIndex = 1;
+        const totalSlides = 18;
+
+        function updateSlideState() {
+            // Hide all slides
+            document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+            // Show current
+            const current = document.getElementById(`slide-${currentSlideIndex}`);
+            if (current) current.classList.add('active');
+
+            // Update Controls
+            document.getElementById('currentSlide').innerText = currentSlideIndex;
+            document.getElementById('totalSlides').innerText = totalSlides;
+            document.getElementById('prevBtn').disabled = (currentSlideIndex === 1);
+            document.getElementById('nextBtn').disabled = (currentSlideIndex === totalSlides);
+
+            // Update Progress Bar
+            const progress = ((currentSlideIndex - 1) / (totalSlides - 1)) * 100;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+        }
+
+        function changeSlide(dir) {
+            const newIndex = currentSlideIndex + dir;
+            if (newIndex >= 1 && newIndex <= totalSlides) {
+                currentSlideIndex = newIndex;
+                updateSlideState();
+            }
+        }
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'Space') changeSlide(1);
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+        });
+
+        // === CHARTS CONFIGURATION ===
+        Chart.defaults.font.family = "'Roboto', sans-serif";
+        Chart.defaults.color = '#546e7a';
+        Chart.defaults.scale.grid.color = '#e9ecef';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateSlideState(); // Initialize first slide
+
+            // 1. Effort Shift Chart (Stacked Bar) - SLIDE 4
+            const ctxEffort = document.getElementById('effortShiftChart').getContext('2d');
+            new Chart(ctxEffort, {
+                type: 'bar',
+                data: {
+                    labels: ['Traditional SDLC', 'Vibe AI (Chat)', 'Spec-Driven (Agent)'],
+                    datasets: [
+                        { label: 'Design & Specs (Intent)', data: [20, 15, 45], backgroundColor: '#dc3545', borderRadius: 8, borderSkipped: false },
+                        { label: 'Coding (Implementation)', data: [50, 25, 10], backgroundColor: '#fd7e14', borderRadius: 8, borderSkipped: false },
+                        { label: 'Testing & Review (Verify)', data: [30, 60, 45], backgroundColor: '#0d6efd', borderRadius: 8, borderSkipped: false }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } },
+                    scales: {
+                        x: { stacked: true, grid: { display: false } },
+                        y: { stacked: true, max: 100, ticks: { callback: v => v + '%' }, title: { display: true, text: 'Tỷ trọng thời gian (%)' } }
+                    },
+                    animation: { duration: 2000, easing: 'easeOutQuart' }
+                }
+            });
+
+            // 2. Market Bubble Chart - SLIDE 5
+            const ctxBubble = document.getElementById('marketBubbleChart').getContext('2d');
+            new Chart(ctxBubble, {
+                type: 'bubble',
+                data: {
+                    datasets: [
+                        { label: 'GitHub Copilot', data: [{x: 95, y: 30, r: 30}], backgroundColor: '#6e5494cc', borderColor: '#6e5494', borderWidth: 2 },
+                        { label: 'Tabby (MSB On-prem)', data: [{x: 65, y: 95, r: 20}], backgroundColor: '#E41E26cc', borderColor: '#E41E26', borderWidth: 3 },
+                        { label: 'Google Gemini', data: [{x: 90, y: 25, r: 25}], backgroundColor: '#4285F4cc', borderColor: '#4285F4', borderWidth: 2 },
+                        { label: 'AWS Kiro', data: [{x: 85, y: 60, r: 15}], backgroundColor: '#FF9900cc', borderColor: '#FF9900', borderWidth: 2 },
+                        { label: 'LunaBase', data: [{x: 80, y: 85, r: 18}], backgroundColor: '#198754cc', borderColor: '#198754', borderWidth: 2 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: { title: { display: true, text: 'Trí thông minh (Capability / IQ) →', font: {weight: 'bold', size: 14} }, min: 50, max: 100, grid: { display: false } },
+                        y: { title: { display: true, text: 'An toàn dữ liệu (Data Privacy) →', font: {weight: 'bold', size: 14} }, min: 0, max: 100, grid: { display: false } }
+                    },
+                    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } },
+                    animation: { duration: 2500, easing: 'easeOutElastic' }
+                }
+            });
+
+             // 3. Radar Assessment Chart - SLIDE 8
+            const ctxRadar = document.getElementById('radarAssessmentChart').getContext('2d');
+            new Chart(ctxRadar, {
+                type: 'radar',
+                data: {
+                    labels: ['IQ Code', 'Security (An toàn)', 'Context (RAG)', 'Speed (Tốc độ)', 'Integration (Tích hợp)'],
+                    datasets: [
+                         { label: 'GitHub Copilot', data: [9.5, 3, 8, 9, 9.5], borderColor: '#6c757d', backgroundColor: 'rgba(108, 117, 125, 0.2)', borderWidth: 2, pointBackgroundColor: '#6c757d' },
+                        { label: 'Tabby (MSB)', data: [6.5, 10, 5, 8, 7], borderColor: '#E41E26', backgroundColor: 'rgba(228, 30, 38, 0.4)', borderWidth: 3, pointBackgroundColor: '#E41E26', pointRadius: 5 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { r: { min: 0, max: 10, ticks: { stepSize: 2, backdropColor: 'transparent' }, pointLabels: { font: { size: 14, weight: 'bold', family: 'Montserrat' } }, grid: { color: '#dee2e6' } } },
+                    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } },
+                    animation: { duration: 2000, easing: 'easeOutQuart' }
+                }
+            });
+
+            // 4. Acceptance Rate Bar Chart (Horizontal) - SLIDE 11
+            const ctxAcceptance = document.getElementById('acceptanceRateChart').getContext('2d');
+            new Chart(ctxAcceptance, {
+                type: 'bar',
+                data: {
+                    labels: ['Tabby (MSB Pilot)', 'Copilot (Trung bình ngành)'],
+                    datasets: [{
+                        label: 'Tỷ lệ chấp nhận (%)',
+                        data: [28, 46],
+                        backgroundColor: ['#E41E26', '#6c757d'],
+                        borderRadius: 10, barThickness: 60
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { max: 60, ticks: { callback: v => v + '%' }, grid: { display: false } }, y: { grid: { display: false }, ticks: { font: { size: 16, weight: 'bold' } } } },
+                    animation: { duration: 1500, easing: 'easeOutQuart' }
+                }
+            });
+
+            // 5. Time Savings Doughnut Chart - SLIDE 11
+            const ctxTime = document.getElementById('timeSavingsChart').getContext('2d');
+            new Chart(ctxTime, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Tiết kiệm nhiều (>30%)', 'Tiết kiệm vừa (10-30%)', 'Không đáng kể (<10%)'],
+                    datasets: [{
+                        data: [20, 50, 30],
+                        backgroundColor: ['#198754', '#F06E1D', '#adb5bd'],
+                        borderWidth: 5, hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } },
+                    animation: { duration: 2000, easing: 'easeOutBounce', animateRotate: true, animateScale: true },
+                    cutout: '60%'
+                }
+            });
+
+            // 6. Language Breakdown Grouped Bar Chart - SLIDE 12
+            const ctxLang = document.getElementById('languageBreakdownChart').getContext('2d');
+            new Chart(ctxLang, {
+                type: 'bar',
+                data: {
+                    labels: ['JS/Node.js', 'Java (Spring)', 'C# (.NET)'],
+                    datasets: [
+                        { label: 'Tỷ lệ chấp nhận (%)', data: [35, 28, 20], backgroundColor: ['#198754', '#F06E1D', '#E41E26'], borderRadius: 10 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, max: 50, ticks: { callback: v => v + '%' }, title: {display: true, text: '% Acceptance Rate', font: {weight: 'bold'}} }, x: { grid: { display: false }, ticks: { font: { size: 14, weight: 'bold' } } } },
+                    animation: { duration: 1500, easing: 'easeOutQuart' }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

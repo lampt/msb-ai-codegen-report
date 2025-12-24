@@ -1,0 +1,167 @@
+:root {
+    /* MSB Brand Colors */
+    --msb-red: #E41E26;
+    --msb-orange: #F06E1D;
+    --msb-gradient: linear-gradient(135deg, var(--msb-red) 0%, var(--msb-orange) 100%);
+    
+    /* UI Palette */
+    --bg-app: #f0f2f5;
+    --bg-slide: #ffffff;
+    --text-primary: #2c3e50;
+    --text-secondary: #546e7a;
+    --border-light: #e9ecef;
+    --shadow-soft: 0 10px 30px -5px rgba(0,0,0,0.1);
+    --shadow-hover: 0 20px 40px -5px rgba(0,0,0,0.2);
+    
+    /* Animation Easing */
+    --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --ease-out-back: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0; padding: 0;
+    background-color: var(--bg-app);
+    font-family: 'Roboto', sans-serif;
+    height: 100vh; display: flex; justify-content: center; align-items: center;
+    color: var(--text-primary);
+    overflow: hidden;
+}
+
+/* 16:9 Slide Container */
+#slide-container {
+    width: 95vw; max-width: 1600px;
+    aspect-ratio: 16/9;
+    background: var(--bg-slide);
+    box-shadow: var(--shadow-soft);
+    border-radius: 12px;
+    position: relative; overflow: hidden;
+    display: flex; flex-direction: column;
+}
+
+/* === MODERN SLIDE TRANSITIONS === */
+.slide {
+    position: absolute; inset: 0;
+    padding: 40px 60px 90px 60px; /* Giảm nhẹ padding bottom */
+    display: flex; flex-direction: column;
+    background: var(--bg-slide); z-index: 1;
+    width: 100%; height: 100%; /* Fix cứng kích thước để tránh layout shift */
+    overflow: hidden; /* Ẩn thanh cuộn thừa trong lúc transition */
+}
+
+.slide.active {
+    z-index: 10;
+}
+
+/* === HEADER STYLING === */
+.slide-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    border-bottom: 3px solid transparent;
+    border-image: var(--msb-gradient) 1;
+    padding-bottom: 15px; margin-bottom: 30px;
+}
+.header-text-group { display: flex; flex-direction: column; }
+.header-main-title {
+    font-family: 'Montserrat', sans-serif; font-size: 18px; font-weight: 700;
+    color: var(--msb-orange); text-transform: uppercase; margin-bottom: 5px; letter-spacing: 1px; opacity: 0.9;
+}
+.header-sub-title {
+    font-family: 'Montserrat', sans-serif; font-size: 32px; font-weight: 900;
+    background: var(--msb-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    text-transform: uppercase; line-height: 1.2;
+}
+
+.header-logo { 
+    background: #fff; 
+    padding: 5px 15px; 
+    border-radius: 8px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+}
+
+/* === CONTROLS === */
+.controls {
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 80px;
+    background: rgba(255,255,255,0.9); backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border-light);
+    display: flex; justify-content: space-between; align-items: center; padding: 0 50px; z-index: 100;
+}
+.btn-nav {
+    background: white; border: none; color: var(--text-secondary); padding: 12px 24px; border-radius: 30px;
+    cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 12px;
+    border: 1px solid var(--border-light); transition: all 0.3s var(--ease-out-back);
+    font-family: 'Montserrat', sans-serif;
+}
+.btn-nav:hover:not(:disabled) {
+    color: white; background: var(--msb-gradient);
+    transform: translateY(-2px); border-color: transparent;
+}
+.btn-nav:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+.progress-container { flex: 1; margin: 0 40px; height: 6px; background: #e9ecef; border-radius: 10px; overflow: hidden; }
+.progress-bar { height: 100%; background: var(--msb-gradient); width: 0%; transition: width 0.5s var(--ease-smooth); border-radius: 10px;}
+.slide-counter { font-family: 'Montserrat', sans-serif; font-weight: bold; font-size: 18px; color: var(--text-primary); }
+
+/* === CONTENT LAYOUTS & COMPONENTS === */
+/* min-height: 0 là chìa khóa để Flexbox không bị vỡ layout khi con quá lớn */
+.slide-content { 
+    flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; font-size: 18px; line-height: 1.6; display: flex; flex-direction: column; height: 100%;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;  /* IE 10+ */
+}
+.slide-content::-webkit-scrollbar { display: none; width: 0; }
+
+/* Grid container cần height 100% để fill slide-content */
+/* Fix Safari: Dùng height: 100% để neo kích thước, tránh việc chart đẩy grid giãn vô tận */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; flex: 1; height: 100%; min-height: 0; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 30px; flex: 1; height: 100%; min-height: 0; }
+
+/* Grid 2x2 cho Slide 8 - Fix cứng row để không bị tràn */
+.tool-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 25px; flex: 1; height: 100%; min-height: 0; }
+
+.card {
+    background: #fff; border-radius: 12px; padding: 30px;
+    border: 1px solid #e0e0e0; /* Flat border */
+    box-shadow: none; /* Loại bỏ shadow để flat hơn */
+    transition: transform 0.3s var(--ease-smooth), border-color 0.3s;
+}
+.card:hover { transform: translateY(-3px); border-color: var(--msb-orange); }
+.card-highlight { background: linear-gradient(to bottom right, #fff5f5, #fff); border-top: 4px solid var(--msb-orange); }
+
+/* Typography */
+h1 { font-family: 'Montserrat', sans-serif; font-size: 54px; font-weight: 900; color: var(--msb-red); margin: 0; }
+h2 { font-size: 36px; color: var(--text-primary); margin-top: 0; }
+h3 { font-family: 'Montserrat', sans-serif; font-size: 22px; color: var(--msb-orange); font-weight: 700; margin-bottom: 15px; }
+ul { padding-left: 25px; } li { margin-bottom: 10px; }
+.badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; color: white; }
+.chart-box { position: relative; width: 100%; border-radius: 12px; padding: 10px; background: #fff; border: 1px solid #e0e0e0; display: flex; flex-direction: column; }
+
+/* Modern Tables */
+table.clean-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 15px; font-size: 16px; background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e0e0e0; }
+table.clean-table th { background: #f8f9fa; color: var(--text-primary); padding: 15px; text-align: left; font-family: 'Montserrat', sans-serif; border-bottom: 2px solid #e9ecef; font-weight: 800; }
+table.clean-table td { padding: 15px 18px; border-bottom: 1px solid var(--border-light); vertical-align: middle; transition: background 0.2s; }
+table.clean-table tr:last-child td { border-bottom: none; }
+table.clean-table tr:hover td { background: #f9fafb; }
+
+/* Tabby Column Highlight */
+.tabby-col { background: #fff5f5; color: var(--msb-red); font-weight: 500; border-left: 1px solid #ffe0e0; border-right: 1px solid #ffe0e0; }
+.tabby-col-last { border-bottom: 4px solid var(--msb-red) !important; } /* Vạch đáy thể hiện Selected */
+
+/* Status Badges for Table */
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid transparent;
+}
+.status-danger { color: #842029; background-color: #f8d7da; border-color: #f5c2c7; }
+.status-success { color: #0f5132; background-color: #d1e7dd; border-color: #badbcc; }
+.status-warning { color: #664d03; background-color: #fff3cd; border-color: #ffecb5; }
+
+/* Heatmap Cells */
+.heat-high { background-color: #d1e7dd !important; color: #0f5132; font-weight: bold; text-align: center; }
+.heat-mid { background-color: #fff3cd !important; color: #664d03; text-align: center; }
+.heat-low { background-color: #f8d7da !important; color: #842029; text-align: center; }
