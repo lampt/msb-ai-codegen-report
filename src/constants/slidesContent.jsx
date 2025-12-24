@@ -3,9 +3,13 @@ import * as C from '../components/Charts';
 
 export const SLIDES_DATA = [
   {
-    id: 1, type: 'cover', title: 'CHIẾN LƯỢC AI CODE GENERATION',
-    subtitle: 'Báo cáo kết quả nghiệm Tabby Pilot & Lộ trình tích hợp SDLC toàn diện',
-    org: 'AI PROGRAM', date: 'Tháng 12/2025', unit: 'Codegen Squad',
+    id: 1, type: 'cover', 
+    title: 'REPORT',
+    titleGradient: 'AI CODE-GENERATION',
+    subtitle: 'Từ thử nghiệm TabbyML Pilot đến Lộ trình tích hợp SDLC toàn diện',
+    org: 'MSB. AI PROGRAM', 
+    date: 'Tháng 12/2025', 
+    unit: 'Đơn vị: AIP - Codegen Squad',
     bgImage: 'https://img.freepik.com/free-vector/gradient-network-connection-background_23-2148879890.jpg'
   },
   {
@@ -18,8 +22,15 @@ export const SLIDES_DATA = [
     ]
   },
   {
-    id: 3, type: 'grid_3', title: '1. Tổng quan & Sự dịch chuyển SDLC', subTitle: 'Sự tiến hóa của Quy trình (SDLC)',
-    desc: 'AI không loại bỏ lập trình viên, mà thay đổi căn bản cách phân bổ nỗ lực (Effort) trong quy trình phát triển phần mềm.',
+    id: 3, type: 'sdlc_evolution', title: '1. Tổng quan & Sự dịch chuyển SDLC', subTitle: 'Sự tiến hóa của Quy trình (SDLC)',
+    sdlcSteps: [
+      { step: 'Requirement', icon: 'fa-file-alt' },
+      { step: 'Design', icon: 'fa-pencil-ruler' },
+      { step: 'Implementation', icon: 'fa-code' },
+      { step: 'Testing', icon: 'fa-bug' },
+      { step: 'Deployment', icon: 'fa-rocket' }
+    ],
+    slogan: 'AI không loại bỏ lập trình viên, mà thay đổi căn bản cách phân bổ nỗ lực (Effort) trong quy trình phát triển phần mềm.',
     cards: [
       { icon: 'fa-laptop-code', title: 'Traditional SDLC', text: 'Mô hình truyền thống, tập trung phần lớn thời gian vào việc viết mã thủ công (Implementation).', badge: 'Focus: Coding (Gõ code)', color: '#6c757d' },
       { icon: 'fa-comments', title: 'AI-Assisted (Vibe)', text: 'Sử dụng Chatbot (Copilot/Gemini) để gợi ý code nhanh. Giảm coding, nhưng tăng thời gian debug lỗi.', badge: 'Focus: Debugging & Prompting', color: 'var(--msb-orange)', highlight: true },
@@ -27,13 +38,21 @@ export const SLIDES_DATA = [
     ]
   },
   {
-    id: 4, type: 'split_chart', title: '1. Tổng quan & Sự dịch chuyển SDLC', subTitle: 'Dữ liệu hóa: Sự dịch chuyển Nỗ lực',
+    id: 4, type: 'split_chart', layout: 'split-chart-50-50', title: '1. Tổng quan & Sự dịch chuyển SDLC', subTitle: 'Dữ liệu hóa: Sự dịch chuyển Nỗ lực',
     analysis: {
       points: [
         { label: 'Xu hướng rõ rệt:', text: 'Thời gian cho "Coding/Implementation" (màu cam) giảm mạnh.', color: '#fd7e14' },
-        { label: 'Yêu cầu mới:', text: 'Thời gian cho "Design/Specs" (màu đỏ) và "Review/Verify" (màu xanh) tăng lên đáng kể.', color: '#dc3545' },
-        { label: 'Kết luận:', text: 'Lập trình viên cần chuyển dịch kỹ năng từ "thợ code" sang "kiến trúc sư" và "kiểm thử viên cấp cao".' }
-      ]
+        { label: 'Yêu cầu mới:', text: 'Thời gian cho "Design/Specs" (màu đỏ) và "Review/Verify" (màu xanh) tăng lên đáng kể.', color: '#dc3545' }
+      ],
+      takeaways: {
+        title: "Định hướng & Hành động",
+        icon: "fa-bullseye",
+        items: [
+            { icon: "fa-brain", text: "Chuyển dịch tư duy: Từ \"Thợ code\" sang \"Kiến trúc sư giải pháp\", tập trung vào thiết kế và chất lượng." },
+            { icon: "fa-graduation-cap", text: "Đào tạo kỹ năng mới: Mở các khóa học về Prompt Engineering, Spec-Driven Design và AI-assisted Testing." },
+            { icon: "fa-tools", text: "Tối ưu công cụ: Xây dựng bộ quy tắc và \"best practice\" để khai thác tối đa sức mạnh của các công cụ AI." }
+        ]
+      }
     },
     chart: <C.EffortShiftChart />
   },
@@ -143,29 +162,39 @@ export const SLIDES_DATA = [
     chart: <C.UsageTrendChart />
   },
   {
-    id: 11, type: 'dual_chart', title: '3. Kết quả Pilot Tabby tại MSB', subTitle: 'Dữ liệu định lượng: Hiệu quả hoạt động',
-    left: { title: 'Tỷ lệ chấp nhận code (Acceptance Rate)', chart: <C.AcceptanceRateChart />, desc: 'Tabby đạt ~28%, mức khá tốt cho model tự vận hành.' },
-    right: { title: 'Thời gian tiết kiệm (Ước tính)', chart: <C.TimeSavingsChart />, desc: '70% Dev thấy tiết kiệm được thời gian đáng kể.' }
-  },
-  {
-    id: 12, type: 'split_chart', title: '3. Kết quả Pilot Tabby tại MSB', subTitle: 'Hiệu quả theo Ngôn ngữ lập trình',
+    id: 11, type: 'split_chart', title: '3. Kết quả Pilot Tabby tại MSB', subTitle: 'Phân tích hiệu quả & Phản hồi',
     analysis: {
-      points: [
-        { label: 'JavaScript / Node.js:', text: '35%+ (Hiệu quả cao nhất. Rất tốt cho Frontend/BFF).', color: '#198754' },
-        { label: 'Java (Spring Boot):', text: '28% (Mức trung bình khá. Tốt cho DTO, Entity).', color: '#F06E1D' },
-        { label: 'C# (.NET Core):', text: '20% (Thấp nhất. Model GPT-OSS 20B vẫn chưa tối ưu tốt cho .NET).', color: '#E41E26' }
+      title: 'Phản hồi định tính (Feedback Heatmap)',
+      heatmap: [
+        { aspect: 'Tốc độ phản hồi (Latency)', java: 'heat-mid', node: 'heat-high', net: 'heat-mid', avg: 'Chấp nhận được' },
+        { aspect: 'Độ chính xác (Boilerplate)', java: 'heat-high', node: 'heat-high', net: 'heat-high', avg: 'Điểm mạnh nhất' },
+        { aspect: 'Độ chính xác (Logic)', java: 'heat-low', node: 'heat-mid', net: 'heat-low', avg: 'Hạn chế lớn' },
+        { aspect: 'Cảm giác Bảo mật', java: 'heat-high', node: 'heat-high', net: 'heat-high', avg: 'Điểm cộng lớn nhất' }
+      ],
+      conclusions: [
+        { text: 'Dev hài lòng về tốc độ phản hồi và khả năng giảm tải các công việc lặp lại nhàm chán.', highlight: 'tốc độ phản hồi' },
+        { text: 'Điểm yếu lớn nhất hiện tại là khả năng xử lý logic nghiệp vụ phức tạp chưa cao.', highlight: 'xử lý logic nghiệp vụ' }
       ]
     },
-    chart: <C.LanguageBreakdownChart />
-  },
-  {
-    id: 13, type: 'heatmap', title: '3. Kết quả Pilot Tabby tại MSB', subTitle: 'Phản hồi định tính (Feedback Heatmap)',
-    rows: [
-      { aspect: 'Tốc độ phản hồi (Latency)', java: 'heat-mid', node: 'heat-high', net: 'heat-mid', avg: 'Chấp nhận được' },
-      { aspect: 'Độ chính xác (Boilerplate)', java: 'heat-high', node: 'heat-high', net: 'heat-high', avg: 'Điểm mạnh nhất' },
-      { aspect: 'Độ chính xác (Logic)', java: 'heat-low', node: 'heat-mid', net: 'heat-low', avg: 'Hạn chế lớn' },
-      { aspect: 'Cảm giác Bảo mật', java: 'heat-high', node: 'heat-high', net: 'heat-high', avg: 'Điểm cộng lớn nhất' }
-    ]
+    chart: (
+      <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
+        <h3 style={{marginTop: 0}}>Dữ liệu định lượng (Quantitative Data)</h3>
+        <div style={{display: 'grid', gridTemplateRows: '45% 50%', gridTemplateColumns: '1fr 1fr', gap: '20px', flex: 1, minHeight: 0}}>
+          <div style={{gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', minHeight: 0}}>
+            <p className="chart-desc" style={{flexShrink: 0}}>Tỷ lệ chấp nhận code gợi ý của Tabby so với trung bình ngành.</p>
+            <div className="chart-box" style={{flex: 1, minHeight: 0}}><C.AcceptanceRateChart /></div>
+          </div>
+          <div style={{display: 'flex', flexDirection: 'column', minHeight: 0}}>
+            <p className="chart-desc" style={{flexShrink: 0}}>Hiệu quả theo từng ngôn ngữ lập trình.</p>
+            <div className="chart-box" style={{flex: 1, minHeight: 0}}><C.LanguageBreakdownChart /></div>
+          </div>
+          <div style={{display: 'flex', flexDirection: 'column', minHeight: 0}}>
+            <p className="chart-desc" style={{flexShrink: 0}}>Khảo sát mức độ tiết kiệm thời gian của Devs.</p>
+            <div className="chart-box" style={{flex: 1, minHeight: 0}}><C.TimeSavingsChart /></div>
+          </div>
+        </div>
+      </div>
+    )
   },
   {
     id: 14, type: 'grid_2', title: '3. Kết quả Pilot Tabby tại MSB', subTitle: 'Tổng kết các phát hiện chính sau Pilot',

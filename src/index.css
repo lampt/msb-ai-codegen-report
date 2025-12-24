@@ -69,7 +69,7 @@ body {
 .header-sub-title {
     font-family: 'Montserrat', sans-serif; font-size: 32px; font-weight: 900;
     background: var(--msb-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    text-transform: uppercase; line-height: 1.2;
+    text-transform: uppercase; line-height: 1.3;
 }
 
 .header-logo { 
@@ -120,6 +120,28 @@ body {
 /* Grid 2x2 cho Slide 8 - Fix cứng row để không bị tràn */
 .tool-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 25px; flex: 1; height: 100%; min-height: 0; }
 
+/* Layout 1fr 1fr (50-50) cho Slide 4 */
+.split-chart-50-50 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    flex: 1;
+    height: 100%;
+    min-height: 0;
+    align-items: start;
+}
+
+/* Layout 1fr 2fr (30-70) cho các slide khác (Slide 11, 12...) */
+.split-chart-30-70 {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 40px;
+    flex: 1;
+    height: 100%;
+    min-height: 0;
+    align-items: start;
+}
+
 .card {
     background: #fff; border-radius: 12px; padding: 30px;
     border: 1px solid #e0e0e0; /* Flat border */
@@ -135,6 +157,14 @@ h2 { font-size: 36px; color: var(--text-primary); margin-top: 0; }
 h3 { font-family: 'Montserrat', sans-serif; font-size: 22px; color: var(--msb-orange); font-weight: 700; margin-bottom: 15px; }
 ul { padding-left: 25px; } li { margin-bottom: 10px; }
 .badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; color: white; }
+.chart-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin: 0 0 10px 0;
+    padding: 0 10px;
+    font-style: italic;
+}
 .chart-box { position: relative; width: 100%; border-radius: 12px; padding: 10px; background: #fff; border: 1px solid #e0e0e0; display: flex; flex-direction: column; }
 
 /* Modern Tables */
@@ -165,3 +195,97 @@ table.clean-table tr:hover td { background: #f9fafb; }
 .heat-high { background-color: #d1e7dd !important; color: #0f5132; font-weight: bold; text-align: center; }
 .heat-mid { background-color: #fff3cd !important; color: #664d03; text-align: center; }
 .heat-low { background-color: #f8d7da !important; color: #842029; text-align: center; }
+
+/* === SLIDE SPECIFIC STYLES === */
+
+/* Cover Slide (Slide 1) */
+.cover-text {
+    flex: 1.2;
+    padding: 80px;
+    background: #fff;
+    z-index: 2;
+    clip-path: polygon(0 0, 100% 0, 90% 100%, 0% 100%);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-shadow: 10px 0 30px rgba(0,0,0,0.05);
+}
+
+.org-tag {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--msb-orange);
+    margin-bottom: 20px;
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+}
+.org-tag i {
+    margin-right: 15px;
+}
+
+.msb-main-title {
+    line-height: 1.1;
+    font-size: 60px;
+    margin: 0; /* Override h1 margin */
+}
+
+.msb-main-title span {
+    background: var(--msb-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.msb-line {
+    height: 6px;
+    width: 150px;
+    background: var(--msb-gradient);
+    margin: 40px 0;
+    border-radius: 3px;
+}
+
+.msb-desc {
+    font-size: 28px;
+    color: var(--text-secondary);
+    font-weight: 300;
+    margin-bottom: 60px;
+}
+
+.cover-badges {
+    display: flex;
+    gap: 50px;
+    font-size: 18px;
+}
+
+.badge-outline {
+    display: flex;
+    align-items: center;
+    background: #fff5f5;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-weight: 500;
+    box-shadow: var(--shadow-soft);
+}
+.badge-outline i {
+    margin-right: 10px;
+}
+.badge-outline:first-child {
+    color: var(--msb-red);
+}
+.badge-outline:last-child {
+    color: var(--msb-orange);
+}
+
+.cover-image {
+    flex: 1;
+    height: 100%;
+    background-position: center;
+    background-size: cover;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 55%;
+    z-index: 1;
+}

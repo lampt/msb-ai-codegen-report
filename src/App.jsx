@@ -28,6 +28,14 @@ function App() {
     }
   };
 
+  // Hàm nhảy trực tiếp đến slide (dùng cho thanh điều hướng)
+  const jumpToSlide = (index) => {
+    if (index >= 1 && index <= totalSlides && index !== currentSlide) {
+      setDirection(index > currentSlide ? 1 : -1);
+      setCurrentSlide(index);
+    }
+  };
+
   // Xử lý phím tắt
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -38,8 +46,6 @@ function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentSlide]);
-
-  const progress = ((currentSlide - 1) / (totalSlides - 1)) * 100;
 
   // Cấu hình Animation cho Slide Container
   const slideVariants = {
@@ -84,7 +90,12 @@ function App() {
         <button className="btn-nav" id="prevBtn" onClick={() => changeSlide(-1)} disabled={currentSlide === 1}>
           <i className="fas fa-chevron-left"></i> Trước
         </button>
-        <ProgressBar progress={progress} />
+        <ProgressBar 
+          totalSlides={totalSlides} 
+          currentSlide={currentSlide} 
+          slidesData={SLIDES_DATA}
+          onSlideClick={jumpToSlide}
+        />
         <div style={{display: 'flex', alignItems: 'center', gap: '15px', marginRight: '15px'}}>
           <div className="slide-counter">
             <span id="currentSlide" style={{ color: 'var(--msb-red)', fontSize: '24px' }}>{currentSlide}</span> / <span id="totalSlides">{totalSlides}</span>

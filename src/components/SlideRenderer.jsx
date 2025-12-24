@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import msbLogo from '../assets/msb-logo.png';
 
@@ -29,9 +29,118 @@ const renderCellContent = (content) => {
   return content;
 };
 
+// Component con chứa state và logic riêng cho Slide 3 để tránh re-render toàn bộ slide
+const SdlcEvolutionContent = ({ slide }) => {
+  const [hoveredFocus, setHoveredFocus] = useState(null);
+
+  // Hàm tính toán cường độ focus (0 -> 1) cho từng bước
+  const getIntensity = (stepName) => {
+    if (!hoveredFocus) return 0;
+    switch (hoveredFocus) {
+      case 'coding': // Traditional
+        return stepName === 'Implementation' ? 1.0 : 0.1;
+      case 'debugging': // AI-Assisted
+        if (stepName === 'Testing') return 1.0;
+        if (stepName === 'Implementation') return 0.5; // Vẫn code nhưng ít hơn
+        return 0.1;
+      case 'design': // Spec-Driven
+        if (stepName === 'Design') return 1.0; // Trọng tâm cao nhất
+        if (stepName === 'Requirement') return 0.9; // Rất quan trọng
+        if (stepName === 'Testing') return 0.8; // Review kỹ
+        if (stepName === 'Implementation') return 0.3; // AI làm là chính
+        return 0.1;
+      default: return 0;
+    }
+  };
+
+  return (
+    <>
+      {/* SDLC Process Flow */}
+      <motion.div variants={itemVariants} style={{
+        display: 'flex', justifyContent: 'center', alignItems: 'center', 
+        marginBottom: '30px', gap: '15px', 
+        minHeight: '140px', // Tăng chiều cao để chứa hiệu ứng scale
+        paddingTop: '30px' // Chừa chỗ phía trên để không bị crop khi phóng to
+      }}>
+        {slide.sdlcSteps.map((step, i) => {
+          const intensity = getIntensity(step.step);
+          const isActive = hoveredFocus !== null;
+          
+          // Tính toán style dựa trên cường độ
+          const scale = isActive ? (intensity > 0.2 ? 1 + intensity * 0.2 : 0.9) : 1; // Max scale 1.2
+          const opacity = isActive ? (intensity > 0.2 ? 1 : 0.3) : 1;
+          const shadowBlur = intensity * 30; // Càng quan trọng bóng càng tỏa rộng
+          const isHighFocus = intensity > 0.6;
+
+          return (
+            <React.Fragment key={i}>
+              <div style={{
+                background: isHighFocus ? 'linear-gradient(135deg, var(--msb-orange), #ff9f43)' : (intensity > 0.2 ? '#fff5f5' : 'white'),
+                border: `2px solid ${intensity > 0.2 ? 'var(--msb-orange)' : '#e9ecef'}`, 
+                borderRadius: '12px', padding: '10px 15px',
+                textAlign: 'center', minWidth: '110px', 
+                boxShadow: isActive && intensity > 0.2 ? `0 10px ${shadowBlur}px rgba(240, 110, 29, ${intensity * 0.6})` : '0 4px 10px rgba(0,0,0,0.05)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2,
+                transition: 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)',
+                transform: `scale(${scale})`,
+                opacity: opacity,
+              }}>
+                <div style={{
+                  width: '40px', height: '40px', borderRadius: '50%', 
+                  background: isHighFocus ? 'rgba(255,255,255,0.2)' : '#fff5f5', 
+                  display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '8px',
+                  transition: 'background 0.3s ease-in-out'
+                }}>
+                  <i className={`fas ${step.icon}`} style={{fontSize: '20px', color: isHighFocus ? 'white' : 'var(--msb-red)'}}></i>
+                </div>
+                <div style={{fontSize: '13px', fontWeight: '700', color: isHighFocus ? 'white' : 'var(--text-primary)'}}>{step.step}</div>
+              </div>
+              {i < slide.sdlcSteps.length - 1 && (
+                <i className="fas fa-arrow-right" style={{color: '#ccc', fontSize: '16px', transition: 'opacity 0.3s ease-in-out', opacity: isActive ? 0.3 : 1}}></i>
+              )}
+            </React.Fragment>
+          );
+        })}
+      </motion.div>
+
+      {/* Slogan */}
+      <motion.div variants={itemVariants} style={{ textAlign: 'center', margin: '0 auto 30px', padding: '20px 30px', background: 'linear-gradient(to right, #fff5f5, #fff)', borderRadius: '16px', borderLeft: '6px solid var(--msb-orange)', boxShadow: '0 5px 15px rgba(240, 110, 29, 0.1)' }}>
+        <p style={{fontSize: '22px', fontWeight: '500', color: '#2c3e50', margin: 0, lineHeight: 1.4}}>
+          <i className="fas fa-quote-left" style={{color: 'var(--msb-orange)', marginRight: '15px', fontSize: '24px', verticalAlign: 'top'}}></i>
+          {slide.slogan}
+        </p>
+      </motion.div>
+
+      {/* Evolution Cards */}
+      <div className="grid-3">
+        {slide.cards.map((card, i) => {
+          let focusType = null;
+          if (card.title.includes('Traditional')) focusType = 'coding';
+          if (card.title.includes('AI-Assisted')) focusType = 'debugging';
+          if (card.title.includes('Spec-Driven')) focusType = 'design';
+
+          return (
+          <motion.div key={i} className={`card ${card.highlight ? 'card-highlight' : ''}`} variants={itemVariants} style={{ borderTop: `6px solid ${card.color}`, textAlign:'center', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px' }}
+            onMouseEnter={() => setHoveredFocus(focusType)}
+            onMouseLeave={() => setHoveredFocus(null)}
+          >
+            <div className="icon-box" style={{ width: '70px', height: '70px', borderRadius: '50%', background: `${card.color}15`, display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '15px' }}>
+              <i className={`fas ${card.icon}`} style={{ fontSize: '32px', color: card.color }}></i>
+            </div>
+            <h3 style={{fontSize: '20px', marginBottom: '10px'}}>{card.title}</h3>
+            <p style={{flex: 1, fontSize: '15px', lineHeight: 1.5, margin: 0}}>{card.text}</p>
+            <div className="badge" style={{ background: card.color, fontSize: '13px', padding: '6px 12px', marginTop: '15px' }}>{card.badge}</div>
+          </motion.div>);
+        }
+        )}
+      </div>
+    </>
+  );
+};
+
 const SlideRenderer = ({ slide }) => {
   // Helper để bọc nội dung slide với Header chuẩn
-  const SlideWrapper = ({ children, className = "" }) => (
+  const SlideWrapper = ({ children, className = "", style = {} }) => (
     <>
       {slide.type !== 'cover' && slide.type !== 'end' && (
         <motion.div className="slide-header" variants={itemVariants}>
@@ -49,7 +158,7 @@ const SlideRenderer = ({ slide }) => {
           </div>
         </motion.div>
       )}
-      <motion.div className={`slide-content ${className}`} variants={containerVariants} initial="hidden" animate="show">
+      <motion.div className={`slide-content ${className}`} style={style} variants={containerVariants} initial="hidden" animate="show">
         {children}
       </motion.div>
     </>
@@ -58,18 +167,30 @@ const SlideRenderer = ({ slide }) => {
   switch (slide.type) {
     case 'cover':
       return (
-        <motion.div className="cover-layout" variants={containerVariants} initial="hidden" animate="show" style={{display:'flex', height:'100%'}}>
-          <motion.div className="cover-text" variants={itemVariants} style={{flex:1.2, padding:80, background:'#fff', zIndex:2, clipPath:'polygon(0 0, 100% 0, 90% 100%, 0% 100%)', display:'flex', flexDirection:'column', justifyContent:'center'}}>
-            <div className="org-tag"><i className="fas fa-code-branch"></i> {slide.org}</div>
-            <h1 className="msb-main-title" style={{fontSize:60, lineHeight:1.1, margin:'20px 0'}}>{slide.title}</h1>
-            <div className="msb-line"></div>
-            <p className="msb-desc">{slide.subtitle}</p>
-            <div className="cover-badges">
-              <div className="badge-outline"><i className="far fa-calendar-alt"></i> {slide.date}</div>
-              <div className="badge-outline"><i className="fas fa-users-cog"></i> {slide.unit}</div>
-            </div>
+        <motion.div variants={containerVariants} initial="hidden" animate="show" style={{display:'flex', height:'100%', alignItems: 'center'}}>
+          <div className="cover-text">
+            <motion.div variants={itemVariants} className="org-tag"><i className="fas fa-code-branch"></i> {slide.org}</motion.div>
+            <motion.h1 variants={itemVariants} className="msb-main-title">
+              {slide.title}<br/>
+              <span>{slide.titleGradient}</span>
+            </motion.h1>
+            <motion.div variants={itemVariants} className="msb-line"></motion.div>
+            <motion.p variants={itemVariants} className="msb-desc">{slide.subtitle}</motion.p>
+            <motion.div variants={itemVariants} className="cover-badges">
+              <div className="badge-outline">
+                <i className="far fa-calendar-alt"></i> {slide.date}
+              </div>
+              <div className="badge-outline">
+                <i className="fas fa-users-cog"></i> {slide.unit}
+              </div>
+            </motion.div>
+          </div>
+          <motion.div 
+            className="cover-image" 
+            variants={itemVariants}
+            style={{ backgroundImage: `url(${slide.bgImage})` }}
+          >
           </motion.div>
-          <motion.div className="cover-image" initial={{opacity:0}} animate={{opacity:1}} transition={{duration:1}} style={{ backgroundImage: `url(${slide.bgImage})`, flex:1, backgroundSize:'cover', backgroundPosition:'center' }}></motion.div>
         </motion.div>
       );
 
@@ -143,6 +264,13 @@ const SlideRenderer = ({ slide }) => {
         </SlideWrapper>
       );
 
+    case 'sdlc_evolution':
+      return (
+        <SlideWrapper>
+          <SdlcEvolutionContent slide={slide} />
+        </SlideWrapper>
+      );
+
     case 'grid_3':
       return (
         <SlideWrapper>
@@ -171,16 +299,69 @@ const SlideRenderer = ({ slide }) => {
 
     case 'split_chart':
       return (
-        <SlideWrapper className="grid-2" style={{ gridTemplateColumns: '1fr 1.5fr' }}>
-          <motion.div variants={itemVariants}>
-            {slide.analysis.points.map((p, i) => (
-              <motion.div key={i} className="card small-card" variants={itemVariants} style={{ borderLeft: `5px solid ${p.color || '#eee'}`, marginBottom:15, padding:15 }}>
-                <strong>{p.label}</strong> {p.text}
-              </motion.div>
-            ))}
-          </motion.div>
+        <SlideWrapper className={slide.layout || 'split-chart-30-70'}>
+          {slide.analysis.heatmap ? (
+            <motion.div variants={itemVariants}>
+              <h3 style={{marginTop: 0}}>{slide.analysis.title}</h3>
+              <table className="clean-table" style={{textAlign:'center', fontSize: 11}}>
+                <thead>
+                  <tr>
+                    <th style={{textAlign:'left', width:'40%', padding: '6px 10px'}}>Khía cạnh</th>
+                    <th style={{padding: '6px 10px'}}>Java</th>
+                    <th style={{padding: '6px 10px'}}>Node.js</th>
+                    <th style={{padding: '6px 10px'}}>.NET</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {slide.analysis.heatmap.map((row, i) => (
+                    <tr key={i} style={{fontSize: 11}}>
+                      <td style={{textAlign:'left'}}><strong>{row.aspect}</strong></td>
+                      <td className={row.java}>{row.java.replace('heat-','')}</td>
+                      <td className={row.node}>{row.node.replace('heat-','')}</td>
+                      <td className={row.net}>{row.net.replace('heat-','')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="card card-highlight" style={{marginTop: 15, padding: '15px 20px'}}>
+                <h4 style={{margin: '0 0 10px 0', color: 'var(--msb-orange)', display: 'flex', alignItems: 'center'}}>
+                  <i className="fas fa-comment-dots" style={{marginRight: 10}}></i> Nhận xét tổng quan
+                </h4>
+                <ul style={{margin: 0, paddingLeft: 20, fontSize: 15, lineHeight: 1.6}}>
+                  {slide.analysis.conclusions && slide.analysis.conclusions.map((c, i) => (
+                    <li key={i} style={{marginBottom: 5}}>
+                      {c.text.split(c.highlight).map((part, index) => index === 0 ? part : <><span style={{color: 'var(--msb-orange)', fontWeight: 'bold'}}>{c.highlight}</span>{part}</>)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div variants={itemVariants}>
+              {slide.analysis.points.map((p, i) => (
+                <motion.div key={i} className="card small-card" variants={itemVariants} style={{ borderLeft: `5px solid ${p.color || '#eee'}`, marginBottom:15, padding:15 }}>
+                  <strong>{p.label}</strong> {p.text}
+                </motion.div>
+              ))}
+              {slide.analysis.takeaways && (
+                <motion.div className="card card-highlight" variants={itemVariants} style={{marginTop: 30, padding: 25}}>
+                    <h4 style={{margin: '0 0 15px 0', color: 'var(--msb-orange)', display: 'flex', alignItems: 'center'}}>
+                        <i className={`fas ${slide.analysis.takeaways.icon}`} style={{marginRight: 10, fontSize: '1.2em'}}></i> {slide.analysis.takeaways.title}
+                    </h4>
+                    <ul style={{margin: 0, paddingLeft: 0, listStyle: 'none', fontSize: 16, lineHeight: 1.7}}>
+                        {slide.analysis.takeaways.items.map((item, i) => (
+                            <li key={i} style={{marginBottom: 12, display: 'flex', alignItems: 'start'}}>
+                                <i className={`fas ${item.icon}`} style={{marginRight: 12, marginTop: 5, color: 'var(--msb-red)', width: '20px', textAlign: 'center'}}></i>
+                                <span>{item.text}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
           {/* Split chart nằm trong Grid -> dùng height: 100% để fill ô grid */}
-          <motion.div className="chart-box" variants={itemVariants} style={{height: '100%', minHeight: 0, overflow: 'hidden'}}>{slide.chart}</motion.div>
+          <motion.div variants={itemVariants} style={{height: '100%', minHeight: 0, overflow: 'hidden'}}>{slide.chart}</motion.div>
         </SlideWrapper>
       );
 

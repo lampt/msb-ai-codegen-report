@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Bar, Bubble, Radar, Doughnut, Line } from 'react-chartjs-2';
 import { Chart as ChartJS, registerables } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 ChartJS.register(...registerables);
+ChartJS.register(ChartDataLabels);
 
 // Hook mới: Trì hoãn việc cung cấp DỮ LIỆU cho biểu đồ, thay vì trì hoãn render.
 // Đây là cách chuẩn để kích hoạt animation "update" của Chart.js.
@@ -22,7 +24,19 @@ export const EffortShiftChart = () => {
   const options = useMemo(() => ({
     responsive: true, 
     maintainAspectRatio: false, 
-    plugins: { legend: { position: 'bottom', labels: { font: { family: 'Montserrat', size: 12 } } } },
+    plugins: { 
+      legend: { position: 'bottom', labels: { font: { family: 'Montserrat', size: 12 } } },
+      datalabels: {
+        // Đặt số liệu vào trong lòng bar
+        display: (context) => context.dataset.data[context.dataIndex] > 0, // Chỉ hiện khi có giá trị
+        color: 'white',
+        font: {
+          weight: 'bold',
+          size: 14
+        },
+        formatter: (value) => `${value}%`
+      }
+    },
     scales: { x: { stacked: true, grid: {display: false} }, y: { stacked: true, max: 100, ticks: { callback: v => v + '%' } } },
     animations: {
       // Vertical Bar: Animate giá trị từ 0 để cột mọc từ dưới lên
@@ -54,7 +68,10 @@ export const UsageTrendChart = () => {
   const options = useMemo(() => ({
     responsive: true, 
     maintainAspectRatio: false, 
-    plugins: { legend: { position: 'bottom', labels: { font: { family: 'Montserrat', size: 12 } } } },
+    plugins: { 
+      legend: { position: 'bottom', labels: { font: { family: 'Montserrat', size: 12 } } },
+      datalabels: { display: false } // Ẩn datalabels cho Line Chart
+    },
     scales: { y: { beginAtZero: true, title: { display: true, text: 'Số lượt sử dụng' } } },
     animations: {
       tension: {
@@ -70,8 +87,8 @@ export const UsageTrendChart = () => {
   const fullData = useMemo(() => ({
     labels: ['Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
     datasets: [
-      { label: 'Code Completions', data: [2451, 1174, 613, 238], borderColor: 'var(--msb-red)', backgroundColor: 'var(--msb-red)', tension: 0.4 },
-      { label: 'Chats', data: [194, 153, 46, 0], borderColor: 'var(--msb-orange)', backgroundColor: 'var(--msb-orange)', tension: 0.4 }
+      { label: 'Code Completions', data: [2451, 1174, 613, 238], borderColor: '#E41E26', backgroundColor: '#E41E26', tension: 0.4 },
+      { label: 'Chats', data: [194, 153, 46, 0], borderColor: '#F06E1D', backgroundColor: '#F06E1D', tension: 0.4 }
     ]
   }), []);
 
@@ -120,7 +137,10 @@ export const RadarAssessmentChart = () => {
   const options = useMemo(() => ({
     responsive: true, 
     maintainAspectRatio: false, 
-    plugins: { legend: { position: 'bottom', labels: { font: { family: 'Montserrat', size: 12 } } } },
+    plugins: { 
+      legend: { position: 'bottom', labels: { font: { family: 'Montserrat', size: 12 } } },
+      datalabels: { display: false } // Ẩn datalabels cho Radar Chart
+    },
     scales: { r: { min: 0, max: 10, ticks: { stepSize: 2, display: false, backdropColor: 'transparent' }, pointLabels: { font: { size: 11, weight: 'bold' } } } },
     animation: { 
       duration: 1500, 
@@ -150,7 +170,19 @@ export const AcceptanceRateChart = () => {
   const options = useMemo(() => ({
     responsive: true, 
     maintainAspectRatio: false, 
-    plugins: { legend: { position: 'bottom', labels: { font: { family: 'Montserrat', size: 12 } } } },
+    plugins: { 
+      legend: { position: 'bottom', labels: { font: { family: 'Montserrat', size: 12 } } },
+      datalabels: {
+        display: true,
+        color: '#1f2937',
+        anchor: 'end',
+        align: 'end',
+        font: {
+          weight: 'bold',
+        },
+        formatter: (value) => `${value}%`
+      }
+    },
     indexAxis: 'y',
     scales: { x: { max: 60, ticks: { callback: v => v + '%' } } },
     animations: {
@@ -175,7 +207,20 @@ export const TimeSavingsChart = () => {
   const options = useMemo(() => ({
     responsive: true, 
     maintainAspectRatio: false, 
-    plugins: { legend: { position: 'bottom', labels: { font: { family: 'Montserrat', size: 12 } } } },
+    plugins: { 
+      legend: { position: 'bottom', labels: { font: { family: 'Montserrat', size: 12 } } },
+      datalabels: {
+        display: true,
+        color: 'white',
+        textShadow: '0px 0px 3px rgba(0, 0, 0, 0.5)',
+        textStrokeColor: 'rgba(0,0,0,0.2)',
+        textStrokeWidth: 2,
+        font: {
+          weight: 'bold',
+          size: 16,
+        },
+      }
+    },
     cutout: '60%',
     // Pie/Doughnut: Xòe quạt (Rotate) và KHÔNG phóng to (Scale), có delay
     animation: { 
@@ -203,7 +248,18 @@ export const LanguageBreakdownChart = () => {
   const options = useMemo(() => ({
     responsive: true, 
     maintainAspectRatio: false, 
-    plugins: { legend: { position: 'bottom', labels: { font: { family: 'Montserrat', size: 12 } } } },
+    plugins: { 
+      legend: { display: false },
+      datalabels: {
+        display: true,
+        color: '#4b5563',
+        anchor: 'end',
+        align: 'end',
+        offset: 8,
+        font: { weight: 'bold' },
+        formatter: (value) => `${value}%`
+      }
+    },
     scales: { y: { beginAtZero: true, max: 50, ticks: { callback: v => v + '%' } } },
     animations: {
       // Vertical Bar: Animate giá trị từ 0 để cột mọc từ dưới lên
