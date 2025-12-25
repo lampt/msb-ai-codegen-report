@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import msbLogo from '../assets/msb-logo.png';
 
 // Variants cho Container (quản lý stagger)
@@ -138,6 +138,108 @@ const SdlcEvolutionContent = ({ slide }) => {
   );
 };
 
+// Component con cho Gantt Chart để quản lý state tooltip
+const GanttChartContent = ({ slide }) => {
+  const [hoveredTaskIndex, setHoveredTaskIndex] = useState(null);
+
+  return (
+    <div className="gantt-container" style={{width: '100%'}}>
+      <div className="gantt-header">
+        <div>Hạng mục công việc</div>
+        {['T1', 'T2', 'T3', 'T4', 'T5', 'T6'].map(m => <div key={m}>{m}</div>)}
+      </div>
+      <motion.div variants={itemVariants} style={{display: 'contents'}}>
+        {slide.tasks.map((task, i) => {
+          // Tính toán vị trí của tooltip để nó căn giữa thanh bar
+          const barCenterAsFraction = ((task.start - 1) + (task.end - task.start + 1) / 2) / 6;
+          const tooltipLeft = `${barCenterAsFraction * 100}%`;
+
+          return (
+            <div 
+              key={i} 
+              className="gantt-row"
+              onMouseEnter={() => setHoveredTaskIndex(i)}
+              onMouseLeave={() => setHoveredTaskIndex(null)}
+            >
+              <div className="gantt-task-name">{task.name}</div>
+              <div className="gantt-timeline">
+                {/* Background Grid Lines */}
+                <div className="gantt-grid-background">
+                  {Array.from({ length: 6 }).map((_, j) => (
+                    <div key={j} className="gantt-grid-cell" />
+                  ))}
+                </div>
+                {/* Task Bar */}
+                <motion.div 
+                  className="gantt-bar"
+                  style={{ gridColumn: `${task.start} / ${task.end + 1}` }}
+                  initial={{ scaleX: 0, originX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: 0.8, delay: 0.5 + i * 0.1, ease: 'easeOut' }}
+                >
+                  {/* Text removed from bar */}
+                </motion.div>
+                {/* Tooltip */}
+                <AnimatePresence>
+                  {hoveredTaskIndex === i && task.details && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, x: "-50%", scale: 0.9 }}
+                      animate={{ opacity: 1, y: -15, x: "-50%", scale: 1 }}
+                      exit={{ opacity: 0, y: 10, x: "-50%", scale: 0.9 }}
+                      transition={{ duration: 0.2 }}
+                      className="gantt-tooltip"
+                      style={{ left: tooltipLeft }}
+                    >
+                      {task.details}
+                      <div className="gantt-tooltip-arrow"></div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          );
+        })}
+      </motion.div>
+    </div>
+  );
+};
+
+// Component hiển thị cơ cấu nhân sự
+const PeopleStructure = ({ personnel }) => (
+  <div style={{marginBottom: '20px', display: 'flex', gap: '30px', height: '140px'}}>
+    <div className="card" style={{flex: 1.2, display: 'flex', flexDirection: 'column', padding: '15px', borderLeft: '5px solid var(--msb-red)', background: '#fff5f5'}}>
+      <div style={{fontWeight: 'bold', color: 'var(--msb-red)', marginBottom: '10px', textTransform: 'uppercase', fontSize: '14px', letterSpacing: '1px'}}>
+        <i className="fas fa-university" style={{marginRight: 8}}></i> Governance Team (Dedicate)
+      </div>
+      <div style={{display: 'flex', gap: '10px', flex: 1}}>
+        {personnel.governance.map((p, i) => (
+          <div key={i} className="people-card" style={{flex: 1, background: 'white', borderRadius: '8px', padding: '10px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', position: 'relative', overflow: 'hidden'}}>
+            <div style={{position: 'absolute', top: 5, right: 5, background: p.color, color: 'white', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold', border: '2px solid white'}}>{p.count}</div>
+            <i className={`fas ${p.icon}`} style={{color: p.color, fontSize: '24px', marginBottom: '5px'}}></i>
+            <div style={{fontWeight: 'bold', fontSize: '13px', color: '#333'}}>{p.role}</div>
+            <div style={{fontSize: '11px', color: '#666'}}>{p.desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+    <div className="card" style={{flex: 0.8, display: 'flex', flexDirection: 'column', padding: '15px', borderLeft: '5px solid #198754', background: '#f0fff4'}}>
+       <div style={{fontWeight: 'bold', color: '#198754', marginBottom: '10px', textTransform: 'uppercase', fontSize: '14px', letterSpacing: '1px'}}>
+        <i className="fas fa-code" style={{marginRight: 8}}></i> Execution (Flexible)
+      </div>
+      <div style={{display: 'flex', gap: '10px', flex: 1}}>
+        {personnel.execution.map((p, i) => (
+          <div key={i} className="people-card" style={{flex: 1, background: 'white', borderRadius: '8px', padding: '10px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', position: 'relative', overflow: 'hidden'}}>
+            <div style={{position: 'absolute', top: 5, right: 5, background: p.color, color: 'white', borderRadius: '12px', padding: '0 8px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold', border: '2px solid white'}}>{p.count}</div>
+            <i className={`fas ${p.icon}`} style={{color: p.color, fontSize: '24px', marginBottom: '5px'}}></i>
+            <div style={{fontWeight: 'bold', fontSize: '13px', color: '#333'}}>{p.role}</div>
+            <div style={{fontSize: '11px', color: '#666'}}>{p.desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
 const SlideRenderer = ({ slide }) => {
   // Helper để bọc nội dung slide với Header chuẩn
   const SlideWrapper = ({ children, className = "", style = {} }) => (
@@ -264,6 +366,29 @@ const SlideRenderer = ({ slide }) => {
         </SlideWrapper>
       );
 
+    case 'strategy_plan':
+      return (
+        <SlideWrapper className="grid-3">
+          {slide.strategy.map((item, i) => (
+            <motion.div key={i} className="card strategy-card" variants={itemVariants} style={{display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden'}}>
+              <div style={{background: 'linear-gradient(to right, #fff5f5, #fff)', padding: '20px 25px', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', position: 'relative'}}>
+                 <div style={{width: '50px', height: '50px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.1)', marginRight: '15px', zIndex: 1}}>
+                    <i className={`fas ${item.icon}`} style={{fontSize: '24px', color: 'var(--msb-red)'}}></i>
+                 </div>
+                 <h3 style={{margin: 0, fontSize: '18px', color: 'var(--msb-red)', flex: 1, zIndex: 1}}>{item.title}</h3>
+                 <span style={{fontFamily: 'Montserrat', fontSize: '40px', fontWeight: 900, color: '#e9ecef', position: 'absolute', right: '20px', top: '10px', zIndex: 0}}>{item.num}</span>
+              </div>
+              <div style={{padding: '25px', flex: 1, display: 'flex', flexDirection: 'column'}}>
+                <p style={{fontSize: '15px', lineHeight: 1.6, marginBottom: '15px', color: '#444'}} dangerouslySetInnerHTML={{__html: item.desc}}></p>
+                <ul style={{fontSize: '14px', paddingLeft: '20px', margin: 0, color: '#666', lineHeight: 1.5}}>
+                  {item.details.map((detail, j) => <li key={j} dangerouslySetInnerHTML={{__html: detail}}></li>)}
+                </ul>
+              </div>
+            </motion.div>
+          ))}
+        </SlideWrapper>
+      );
+
     case 'sdlc_evolution':
       return (
         <SlideWrapper>
@@ -300,7 +425,7 @@ const SlideRenderer = ({ slide }) => {
     case 'split_chart':
       return (
         <SlideWrapper className={slide.layout || 'split-chart-30-70'}>
-          {slide.analysis.heatmap ? (
+          {slide.analysis && slide.analysis.heatmap ? (
             <motion.div variants={itemVariants}>
               <h3 style={{marginTop: 0}}>{slide.analysis.title}</h3>
               <table className="clean-table" style={{textAlign:'center', fontSize: 11}}>
@@ -330,7 +455,7 @@ const SlideRenderer = ({ slide }) => {
                 <ul style={{margin: 0, paddingLeft: 20, fontSize: 15, lineHeight: 1.6}}>
                   {slide.analysis.conclusions && slide.analysis.conclusions.map((c, i) => (
                     <li key={i} style={{marginBottom: 5}}>
-                      {c.text.split(c.highlight).map((part, index) => index === 0 ? part : <><span style={{color: 'var(--msb-orange)', fontWeight: 'bold'}}>{c.highlight}</span>{part}</>)}
+                      {c.text.split(c.highlight).map((part, index) => index === 0 ? part : <React.Fragment key={index}><span style={{color: 'var(--msb-orange)', fontWeight: 'bold'}}>{c.highlight}</span>{part}</React.Fragment>)}
                     </li>
                   ))}
                 </ul>
@@ -338,12 +463,12 @@ const SlideRenderer = ({ slide }) => {
             </motion.div>
           ) : (
             <motion.div variants={itemVariants}>
-              {slide.analysis.points.map((p, i) => (
+              {slide.analysis && slide.analysis.points && slide.analysis.points.map((p, i) => (
                 <motion.div key={i} className="card small-card" variants={itemVariants} style={{ borderLeft: `5px solid ${p.color || '#eee'}`, marginBottom:15, padding:15 }}>
                   <strong>{p.label}</strong> {p.text}
                 </motion.div>
               ))}
-              {slide.analysis.takeaways && (
+              {slide.analysis && slide.analysis.takeaways && (
                 <motion.div className="card card-highlight" variants={itemVariants} style={{marginTop: 30, padding: 25}}>
                     <h4 style={{margin: '0 0 15px 0', color: 'var(--msb-orange)', display: 'flex', alignItems: 'center'}}>
                         <i className={`fas ${slide.analysis.takeaways.icon}`} style={{marginRight: 10, fontSize: '1.2em'}}></i> {slide.analysis.takeaways.title}
@@ -480,6 +605,47 @@ const SlideRenderer = ({ slide }) => {
         </SlideWrapper>
       );
 
+    case 'summary_and_actions':
+      return (
+        <SlideWrapper>
+          {/* Top Summary Cards */}
+          <div className="grid-2" style={{ gap: '25px', alignItems: 'stretch', height: 'auto', flex: '0 0 auto' }}>
+            {slide.summary.cards.map((card, i) => (
+              <motion.div key={i} className="card" variants={itemVariants} style={{ padding: '15px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                <div style={{display:'flex', alignItems:'center', marginBottom:10}}>
+                  <i className={card.icon} style={{fontSize:28, marginRight:15, color: card.color}}></i>
+                  <h3 style={{margin:0, fontSize: '18px', color: card.color}}>{card.h}</h3>
+                </div>
+                <ul style={{fontSize: 14, lineHeight: 1.5, paddingLeft: 20, margin: 0, flex: 1}}>
+                  {card.list.map((li, j) => <li key={j}>{li}</li>)}
+                </ul>
+              </motion.div>
+            ))}
+          </div>
+          
+          {/* Bottom Next Actions Card */}
+          <motion.div className="card card-highlight" variants={itemVariants} style={{marginTop: '20px', padding: 20, flex: 1, display: 'flex', flexDirection: 'column'}}>
+            <h3 style={{margin: '0 0 15px 0', color: 'var(--msb-orange)', display: 'flex', alignItems: 'center'}}>
+              <i className={`fas ${slide.next_actions.icon}`} style={{marginRight: 10, fontSize: '1.2em'}}></i> {slide.next_actions.title}
+            </h3>
+            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', flex: 1}}>
+              {slide.next_actions.groups && slide.next_actions.groups.map((group, i) => (
+                <div key={i} style={{background: 'rgba(255,255,255,0.6)', borderRadius: '12px', padding: '15px', border: '1px solid rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column'}}>
+                  <div style={{fontWeight: 'bold', color: 'var(--msb-red)', marginBottom: '12px', display: 'flex', alignItems: 'center', fontSize: '16px'}}>
+                    <i className={`fas ${group.icon}`} style={{marginRight: '10px', fontSize: '18px'}}></i> {group.category}
+                  </div>
+                  <ul style={{margin: 0, paddingLeft: '20px', fontSize: '15px', lineHeight: 1.6, flex: 1}}>
+                    {group.items.map((item, j) => (
+                      <li key={j} style={{marginBottom: '8px'}}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </SlideWrapper>
+      );
+
     case 'table_compare':
       return (
         <SlideWrapper>
@@ -584,21 +750,15 @@ const SlideRenderer = ({ slide }) => {
         </SlideWrapper>
       );
 
-    case 'traffic_light':
+    case 'gantt_chart':
       return (
         <SlideWrapper>
-          <motion.p className="section-desc" variants={itemVariants}>{slide.policy}</motion.p>
-          <table className="clean-table">
-            <tbody>
-              {slide.zones.map((z, i) => (
-                <tr key={i} style={{background: z.color === 'red' ? '#fff5f5' : z.color === 'yellow' ? '#fffbeb' : '#f0fff4'}}>
-                  <td style={{width:'20%'}}><strong>{z.label}</strong></td>
-                  <td>{z.desc}</td>
-                  <td><b>{z.tool}</b></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
+            {slide.personnel && (
+              <PeopleStructure personnel={slide.personnel} />
+            )}
+            <GanttChartContent slide={slide} />
+          </div>
         </SlideWrapper>
       );
 
@@ -618,12 +778,18 @@ const SlideRenderer = ({ slide }) => {
 
     case 'end':
       return (
-        <motion.div className="end-layout" variants={containerVariants} initial="hidden" animate="show" style={{height:'100%', display:'flex', justifyContent:'center', alignItems:'center', background:"url('https://img.freepik.com/free-vector/gradient-network-connection-background_23-2148879890.jpg') center/cover"}}>
-          <motion.div className="card" variants={itemVariants} style={{textAlign:'center', padding:'60px 100px'}}>
-            <div style={{fontSize:120, background:'var(--msb-gradient)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent'}}><i className="fas fa-comments"></i></div>
-            <h1 style={{fontSize:80, fontFamily:'Montserrat'}}>{slide.title}</h1>
-            <p style={{fontSize:24, color:'#555'}}>{slide.subtitle}</p>
-            <div style={{marginTop:50}}><p><strong>{slide.contact.unit}</strong></p><p style={{color:'var(--msb-red)'}}>{slide.contact.email}</p></div>
+        <motion.div variants={containerVariants} initial="hidden" animate="show" style={{display:'flex', height:'100%', alignItems: 'center'}}>
+          <div className="cover-text">
+            <motion.h1 variants={itemVariants} className="msb-main-title" style={{fontSize: '100px', textAlign: 'center'}}>
+              {slide.title}<br/>
+              <span>{slide.titleGradient}</span>
+            </motion.h1>
+          </div>
+          <motion.div 
+            className="cover-image" 
+            variants={itemVariants}
+            style={{ backgroundImage: `url(${slide.bgImage})` }}
+          >
           </motion.div>
         </motion.div>
       );

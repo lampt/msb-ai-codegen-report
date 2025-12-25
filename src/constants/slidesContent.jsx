@@ -151,17 +151,6 @@ export const SLIDES_DATA = [
     ]
   },
   {
-    id: 10, type: 'split_chart', title: '3. Kết quả Pilot Tabby tại MSB', subTitle: 'Phân tích xu hướng sử dụng (4 tháng)',
-    analysis: {
-      points: [
-        { label: 'Xu hướng giảm:', text: 'Lượt sử dụng cả 2 tính năng (Completions & Chat) đều giảm mạnh qua các tháng.', color: '#dc3545' },
-        { label: 'Tháng 12:', text: 'Ghi nhận mức sử dụng thấp nhất, đặc biệt tính năng Chat không được sử dụng.', color: '#fd7e14' },
-        { label: 'Giả thuyết:', text: 'Có thể do chất lượng gợi ý chưa cao, hoặc dev chưa quen/chưa thấy thực sự hữu ích trong công việc hàng ngày.' }
-      ]
-    },
-    chart: <C.UsageTrendChart />
-  },
-  {
     id: 11, type: 'split_chart', title: '3. Kết quả Pilot Tabby tại MSB', subTitle: 'Phân tích hiệu quả & Phản hồi',
     analysis: {
       title: 'Phản hồi định tính (Feedback Heatmap)',
@@ -174,7 +163,12 @@ export const SLIDES_DATA = [
       conclusions: [
         { text: 'Dev hài lòng về tốc độ phản hồi và khả năng giảm tải các công việc lặp lại nhàm chán.', highlight: 'tốc độ phản hồi' },
         { text: 'Điểm yếu lớn nhất hiện tại là khả năng xử lý logic nghiệp vụ phức tạp chưa cao.', highlight: 'xử lý logic nghiệp vụ' }
-      ]
+      ],
+      stats: [
+        { icon: 'fa-code', val: '4.4k', lab: 'Code Completions' },
+        { icon: 'fa-comments', val: '393', lab: 'Lượt Chat' },
+        { icon: 'fa-users', val: '32', lab: 'Users hoạt động' },
+      ],
     },
     chart: (
       <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
@@ -197,39 +191,120 @@ export const SLIDES_DATA = [
     )
   },
   {
-    id: 14, type: 'grid_2', title: '3. Kết quả Pilot Tabby tại MSB', subTitle: 'Tổng kết các phát hiện chính sau Pilot',
-    cards: [
-      { icon: 'fas fa-check-circle', h: 'Những điều ĐÃ làm được', p: 'Chứng minh khả thi kỹ thuật; Bảo mật dữ liệu 100%; Dev cởi mở hào hứng.', list: ['Triển khai thành công LLM 20B nội bộ.', 'Kiểm soát hoàn toàn luồng dữ liệu.', 'Giảm tải công việc nhàm chán.'] },
-      { icon: 'fas fa-exclamation-triangle', h: 'Những hạn chế & Thách thức', p: 'IQ model 20B vẫn còn giới hạn; Thiếu ngữ cảnh toàn dự án; Cần tối ưu/nâng cấp GPU.', list: ['Model Open-source (20B) vẫn kém hơn GPT-4.', 'Thiếu ngữ cảnh (Lack of Context).', 'Cần tối ưu/nâng cấp thêm GPU để mở rộng.'] }
+    id: 12, type: 'summary_and_actions', title: '3. Kết quả Pilot Tabby tại MSB', subTitle: 'Tổng kết & Đề xuất hành động',
+    summary: {
+      cards: [
+        { icon: 'fas fa-check-circle', h: 'Những điều ĐÃ làm được', color: '#198754', list: ['Triển khai thành công LLM 20B nội bộ.', 'Kiểm soát hoàn toàn luồng dữ liệu (Zero Egress).', 'Devs cởi mở, sẵn sàng đón nhận công nghệ.'] },
+        { icon: 'fas fa-exclamation-triangle', h: 'Những hạn chế & Thách thức', color: 'var(--msb-red)', list: ['Model Open-source (20B) vẫn kém hơn GPT-4.', 'Thiếu ngữ cảnh toàn dự án (Lack of Context).', 'Cần tối ưu/nâng cấp GPU để mở rộng.'] }
+      ]
+    },
+    next_actions: {
+      title: "Đề xuất Hành động tiếp theo (Next Actions)",
+      icon: "fa-tasks",
+      groups: [
+        {
+          category: "Tổ chức & Quy trình (WoW)",
+          icon: "fa-sitemap",
+          items: [
+            "Thống nhất WoW: PO của AIP phối hợp chặt chẽ với Co-PO & BA Khối IT & các Program khác khối SI để thúc đẩy trên từng Project.",
+            "Xây dựng & Ban hành Bộ chỉ số đo lường (Metrics), các biểu mẫu Survey định kỳ để đánh giá hiệu quả."
+          ]
+        },
+        {
+          category: "Nghiên cứu & Công nghệ",
+          icon: "fa-flask",
+          items: [
+            "Nghiên cứu & PoC tính năng RAG (Context) của Tabby với tài liệu nội bộ trên Confluence (cần chọn các dự án thí điểm cụ thể).",
+            "Thử nghiệm model mới (DeepSeek V2 hoặc GPT-OSS 120B. Cần đầu tư thêm ít nhất 4 x H100 GPU).",
+            "Thử nghiệm công cụ Agentic AI (như Wynxx /Kiro) cho nhóm bài toán Greenfield."
+          ]
+        },
+        {
+          category: "Đào tạo & Văn hóa",
+          icon: "fa-chalkboard-teacher",
+          items: [
+            "Tìm kiếm lớp hoặc thuê chính các đơn vị PoC các Agentic AI để Đào tạo kỹ năng Prompt Engineering & Review code AI.",
+            "Workshop \"AI-First Mindset\" cho cấp quản lý và Tech Lead.",
+            "Xây dựng cộng đồng chia sẻ Best Practice nội bộ."
+          ]
+        }
+      ]
+    }
+  },
+  {
+    id: 13, type: 'strategy_plan', title: '4. Chiến lược & Lộ trình triển khai', subTitle: 'Chiến lược & Giải pháp triển khai',
+    strategy: [
+        {
+            num: '01',
+            title: 'Khảo sát & Phân tích hiện trạng',
+            icon: 'fa-search',
+            desc: 'PO của AIP phối hợp cùng IT Lead thực hiện <strong>khảo sát toàn diện</strong> hệ thống & nhân sự.',
+            details: ['<strong>Phân nhóm hệ thống:</strong> Legacy (Core), Microservice (Digital), Monolith (Internal).', '<strong>Tech Stack:</strong> Java (Spring), .NET Core, React/Angular.', '<strong>Pain Points:</strong> Xác định các dự án có nợ kỹ thuật cao hoặc quy trình thủ công.']
+        },
+        {
+            num: '02',
+            title: 'Lựa chọn Pilot & Nhân sự',
+            icon: 'fa-user-check',
+            desc: 'Lựa chọn <strong>đúng người, đúng việc</strong>. Ưu tiên tinh thần "Can-do" và tư duy mở.',
+            details: ['<strong>Dự án Vibe Coding:</strong> Bảo trì, Fix bug, Unit Test (Giảm tải).', '<strong>Dự án Spec-Driven:</strong> Xây mới (Greenfield), Module độc lập.', '<strong>Champion Team:</strong> Chọn lọc các Tech Lead có tầm ảnh hưởng để lan tỏa.']
+        },
+        {
+            num: '03',
+            title: 'Khung Đo lường & Đánh giá',
+            icon: 'fa-ruler-combined',
+            desc: 'Thiết lập bộ <strong>Metrics định lượng</strong> để chứng minh hiệu quả đầu tư (ROI).',
+            details: ['<strong>Chỉ số:</strong> Acceptance Rate (>30%), Time Savings (>20%), Bug Rate (Giảm).', '<strong>Cơ chế:</strong> Survey định kỳ hàng tháng & Phỏng vấn sâu.', '<strong>Go/No-Go:</strong> Đánh giá lại sau mỗi quý để quyết định mở rộng.']
+        }
     ]
   },
   {
-    id: 15, type: 'traffic_light', title: '4. Chiến lược & Lộ trình triển khai', subTitle: 'Chiến lược Phân vùng Bảo mật',
-    policy: 'Áp dụng chính sách "Đèn Giao Thông" (Traffic Light Protocol) để quản lý rủi ro khi sử dụng AI.',
-    zones: [
-      { color: 'red', label: '🔴 VÙNG ĐỎ (Cao)', desc: 'Core Banking, Dữ liệu KHTN, Thẻ. Chứa PII.', tool: 'CHỈ DÙNG Tabby (On-Prem)' },
-      { color: 'yellow', label: '🟡 VÙNG VÀNG (TB)', desc: 'Ứng dụng nội bộ, Middleware. Logic nghiệp vụ.', tool: 'Tabby (Ưu tiên) / Copilot Business' },
-      { color: 'green', label: '🟢 VÙNG XANH (Thấp)', desc: 'Frontend Public, Open-Source Libs. Dữ liệu công khai.', tool: 'Tự do (Copilot, Gemini...)' }
+    id: 14, type: 'gantt_chart', title: '4. Chiến lược & Lộ trình triển khai', subTitle: 'Cơ cấu nhân sự & Lộ trình 2026',
+    personnel: {
+        governance: [
+            { role: 'PM/PO (AIP)', count: '01', desc: 'Strategy & WoW', icon: 'fa-user-tie', color: 'var(--msb-red)' },
+            { role: 'Tech Lead (AIP)', count: '01', desc: 'Architecture & Quality', icon: 'fa-user-shield', color: 'var(--msb-orange)' },
+            { role: 'BA (AIP)', count: '01', desc: 'Requirement & Specs', icon: 'fa-clipboard-list', color: '#6f42c1' },
+            { role: 'AI Engineer', count: '02', desc: 'Model & RAG', icon: 'fa-cogs', color: '#0d6efd' }
+        ],
+        execution: [
+            { role: 'Co-PO & BA (IT)', count: '02', desc: 'Đối ứng & Phối hợp', icon: 'fa-handshake', color: '#198754' },
+            { role: 'Champion Devs', count: '05', desc: 'Tiên phong & Lan tỏa', icon: 'fa-medal', color: '#ffc107' },
+            { role: 'DEV Squads', count: '50+', desc: 'Tham gia Pilot', icon: 'fa-users', color: '#6c757d' }
+        ]
+    },
+    tasks: [
+      { 
+          name: 'Khảo sát & Phân nhóm dự án', start: 1, end: 2,
+          details: 'Nền tảng cho mọi quyết định. Phải làm đầu tiên để biết "chiến trường" hiện tại (công nghệ, ngôn ngữ, dự án "nóng").'
+      },
+      { 
+          name: 'Xây dựng Quy trình & Metrics (WoW)', start: 1, end: 3,
+          details: 'Xây dựng và thống nhất quy trình làm việc mới (WoW) và bộ chỉ số đo lường (Metrics). Cần thời gian để thảo luận và ban hành chính thức.'
+      },
+      { 
+          name: 'PoC Agentic AI - Spec driven: Wynxx & Kiro', start: 2, end: 4,
+          details: 'Bắt đầu sớm với Cloud Model. Đánh giá khả năng tự chủ của AI trên dự án Greenfield và so sánh hiệu quả.'
+      },
+      { 
+          name: 'Nâng cấp Hạ tầng GPU (4xH100)', start: 3, end: 3,
+          details: 'Quy trình phê duyệt và mua sắm nhanh trong 1 tháng. Nền tảng để thử nghiệm các model lớn hơn cho Tabby.'
+      },
+      { 
+          name: 'PoC RAG cho Tabby (Dự án sẽ chọn sau)', start: 3, end: 4,
+          details: 'Hạng mục "Nâng cấp" cho Tabby. Chạy song song với nâng cấp GPU để tăng độ chính xác cho các dự án có sẵn.'
+      },
+      { 
+          name: 'Thử nghiệm Models: DeepSeek-Coder-V2, GPT-OSS 120B', start: 4, end: 4,
+          details: 'Ngay khi có GPU mới, thực hiện test các model lớn để nâng cấp "IQ" cho Tabby, so sánh hiệu quả.'
+      },
+      { 
+          name: 'Đào tạo & Mở rộng Pilot (50+ Devs)', start: 4, end: 6,
+          details: 'Dựa trên kết quả các PoC, tiến hành đào tạo diện rộng và mở rộng cho nhiều dev hơn, thu thập feedback liên tục.'
+      }
     ]
   },
   {
-    id: 16, type: 'roadmap', title: '4. Chiến lược & Lộ trình triển khai', subTitle: 'Lộ trình triển khai chi tiết (Roadmap)',
-    phases: [
-      { phase: 'Giai đoạn 1: Nền tảng', time: 'Hiện tại - Q2/2026', icon: 'fa-rocket', color: 'var(--msb-red)', list: ['Ổn định Tabby On-prem.', 'Mở rộng 50+ developers.', 'Nâng cấp GPU (2x A100).'] },
-      { phase: 'Giai đoạn 2: Tích hợp RAG', time: 'Q3/2026 - Q4/2026', icon: 'fa-network-wired', color: 'var(--msb-orange)', list: ['Kết nối Confluence/GitLab nội bộ.', 'Thử nghiệm mô hình Hybrid.', 'Hiểu ngữ cảnh nghiệp vụ.'] },
-      { phase: 'Giai đoạn 3: Agentic AI', time: '2027+', icon: 'fa-robot', color: '#0d6efd', list: ['Mô hình Spec-Driven Development.', 'Pilot AI Agent dự án mới.', 'Văn hóa "AI-First".'] }
-    ]
-  },
-  {
-    id: 17, type: 'grid_3', title: '4. Chiến lược & Lộ trình triển khai', subTitle: 'Khuyến nghị cho Ban Lãnh Đạo',
-    cards: [
-      { icon: 'fa-file-signature', title: '1. Phê duyệt Chính sách', text: 'Ban hành quy định phân loại dữ liệu và vùng sử dụng AI (Traffic Light Protocol).', color: 'var(--msb-red)' },
-      { icon: 'fa-server', title: '2. Đầu tư Hạ tầng GPU', text: 'Phê duyệt ngân sách nâng cấp server GPU nội bộ để sở hữu năng lực AI riêng.', color: 'var(--msb-orange)' },
-      { icon: 'fa-user-graduate', title: '3. Chuyển đổi Con người', text: 'Đào tạo diện rộng về kỹ năng làm việc với AI và tư duy thiết kế (Spec-Driven).', color: '#0d6efd' }
-    ]
-  },
-  {
-    id: 18, type: 'end', title: 'Q & A', subtitle: 'Cảm ơn Quý Lãnh đạo đã lắng nghe.',
-    contact: { unit: 'AI Team - Khối CNTT MSB', email: 'aiteam@msb.com.vn' }
+    id: 15, type: 'end', title: 'THANK YOU', titleGradient: '& QnA',
+    bgImage: 'https://img.freepik.com/free-vector/gradient-network-connection-background_23-2148879890.jpg'
   }
 ];

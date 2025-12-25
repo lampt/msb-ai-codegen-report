@@ -151,6 +151,15 @@ body {
 .card:hover { transform: translateY(-3px); border-color: var(--msb-orange); }
 .card-highlight { background: linear-gradient(to bottom right, #fff5f5, #fff); border-top: 4px solid var(--msb-orange); }
 
+.strategy-card {
+    border-top: 4px solid var(--msb-red);
+    transition: all 0.3s ease;
+}
+.strategy-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(228, 30, 38, 0.15);
+}
+
 /* Typography */
 h1 { font-family: 'Montserrat', sans-serif; font-size: 54px; font-weight: 900; color: var(--msb-red); margin: 0; }
 h2 { font-size: 36px; color: var(--text-primary); margin-top: 0; }
@@ -288,4 +297,110 @@ table.clean-table tr:hover td { background: #f9fafb; }
     top: 0;
     width: 55%;
     z-index: 1;
+}
+
+/* Gantt Chart */
+.gantt-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.gantt-header, .gantt-row {
+    display: grid;
+    grid-template-columns: 2.5fr repeat(6, 1fr);
+    align-items: center;
+}
+.gantt-header {
+    font-weight: bold;
+    text-align: center;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border-light);
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+.gantt-row {
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+    min-height: 40px; /* Even smaller row height */
+    transition: background 0.2s ease;
+}
+.gantt-row:hover {
+    background: #f9fafb;
+}
+.gantt-task-name {
+    padding: 10px 15px; /* Smaller padding */
+    font-weight: 500;
+    font-size: 13px; /* Smaller font */
+    border-right: 1px solid var(--border-light);
+}
+.gantt-timeline {
+    grid-column: 2 / 8;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    padding: 10px;
+    height: 100%;
+    position: relative;
+}
+.gantt-grid-background {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    z-index: 1;
+}
+.gantt-grid-cell {
+    border-right: 1px dashed var(--border-light);
+}
+.gantt-grid-cell:last-child {
+    border-right: none;
+}
+.gantt-bar {
+    grid-row: 1; /* Đảm bảo bar nằm trên cùng 1 hàng với grid cell */
+    position: relative;
+    z-index: 2;
+    border-radius: 6px;
+    background: var(--msb-gradient); /* Use MSB gradient for all bars */
+    color: white;
+    font-size: 13px; /* Smaller font */
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Gantt Tooltip */
+.gantt-tooltip {
+    position: absolute;
+    bottom: 100%;
+    background: #2c3e50;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    width: 300px;
+    white-space: normal;
+    z-index: 1000;
+    pointer-events: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    font-weight: 400;
+    line-height: 1.5;
+    margin-bottom: 10px;
+    font-family: 'Roboto', sans-serif;
+}
+
+.gantt-tooltip-arrow {
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    margin-left: -5px;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #2c3e50;
 }
