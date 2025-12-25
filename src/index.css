@@ -31,13 +31,13 @@ body {
 
 /* 16:9 Slide Container */
 #slide-container {
-    width: 95vw; max-width: 1600px;
-    aspect-ratio: 16/9;
+    width: 1600px; height: 900px; /* Kích thước chuẩn cố định */
     background: var(--bg-slide);
     box-shadow: var(--shadow-soft);
     border-radius: 12px;
     position: relative; overflow: hidden;
     display: flex; flex-direction: column;
+    flex-shrink: 0; /* Đảm bảo không bị Flexbox của body bóp méo */
 }
 
 /* === MODERN SLIDE TRANSITIONS === */

@@ -10,6 +10,27 @@ function App() {
   const [direction, setDirection] = useState(0);
   const totalSlides = SLIDES_DATA.length;
 
+  // === RESPONSIVE SCALING LOGIC ===
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const BASE_WIDTH = 1600;
+      const BASE_HEIGHT = 900;
+      const PADDING = 20; // Khoảng đệm an toàn
+
+      const scaleX = (window.innerWidth - PADDING) / BASE_WIDTH;
+      const scaleY = (window.innerHeight - PADDING) / BASE_HEIGHT;
+
+      // Chọn tỷ lệ nhỏ hơn để đảm bảo slide luôn nằm trọn trong màn hình (Contain)
+      setScale(Math.min(scaleX, scaleY));
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Tính toán ngay khi load
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const toggleFullScreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
@@ -67,7 +88,7 @@ function App() {
   };
 
   return (
-    <div id="slide-container">
+    <div id="slide-container" style={{ transform: `scale(${scale})` }}>
       <AnimatePresence initial={false} custom={direction} mode="popLayout">
         <motion.div
           key={currentSlide}
