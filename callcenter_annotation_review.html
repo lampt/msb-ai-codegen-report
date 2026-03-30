@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>MSB CallCenter — ASR Annotation Review</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#2d333b;
+  --border:#30363d;--text:#e6edf3;--muted:#7d8590;--hint:#484f58;
+  --agent:#3fb950;--cust:#58a6ff;--noise:#f85149;
+  --sil-long:#d29922;--sil-dead:#8b949e;
+}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* ══ APP GRID ══ */
+.app{display:grid;grid-template-rows:44px 1fr;height:100vh}
+
+/* ── HEADER ── */
+.hdr{background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:0 12px;flex-shrink:0}
+.hdr-dot{width:7px;height:7px;border-radius:50%;background:var(--agent);box-shadow:0 0 5px var(--agent)}
+.hdr-title{font-size:13px;font-weight:600}
+.hdr-sub{font-size:11px;color:var(--muted)}
+.chip{font-size:10px;padding:2px 7px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--muted);white-space:nowrap}
+
+/* ══ BODY = 3 COLUMNS ══ */
+.body{display:grid;grid-template-columns:290px 1fr;overflow:hidden;height:100%}
+
+/* ══ LEFT PANEL — Channel Analysis ══ */
+.left{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden}
+.panel-hdr{padding:7px 10px;border-bottom:1px solid var(--border);font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.09em;text-transform:uppercase;position:sticky;top:0;background:var(--bg2);z-index:2}
+
+/* VAD summary cards */
+.vad-section{padding:8px 10px;border-bottom:1px solid var(--border)}
+.vad-title{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
+.kv-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border-radius:3px;overflow:hidden}
+.kv{background:var(--bg3);padding:6px 8px}
+.kv-k{font-size:9px;color:var(--muted);margin-bottom:2px;white-space:normal;line-height:1.3}
+.kv-v{font-size:11px;font-weight:500;font-family:'JetBrains Mono',monospace;word-break:break-all}
+.kv-v.green{color:var(--agent)}.kv-v.blue{color:var(--cust)}.kv-v.red{color:var(--noise)}.kv-v.yellow{color:var(--sil-long)}.kv-v.muted{color:var(--muted)}
+
+/* Threshold visual */
+.thr-wrap{background:var(--bg3);border-radius:4px;padding:6px 8px;margin-top:5px}
+.thr-label{font-size:9px;color:var(--muted);margin-bottom:5px}
+.thr-bar-bg{background:var(--bg4);border-radius:2px;height:10px;position:relative;overflow:visible}
+.thr-bar-speech{position:absolute;top:0;left:0;height:100%;background:rgba(88,166,255,.3);border-radius:2px}
+.thr-bar-noise{position:absolute;top:0;height:100%;background:rgba(248,81,73,.3);border-radius:2px}
+.thr-line{position:absolute;top:-3px;width:2px;height:16px;border-radius:1px}
+.thr-line-p1{background:#666}
+.thr-line-dyn{background:var(--cust)}
+.thr-ticks{display:flex;justify-content:space-between;margin-top:3px;font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--hint)}
+
+/* Segment list */
+.seg-list{}
+.seg-list-hdr{display:grid;grid-template-columns:48px 38px 50px 1fr 70px;gap:2px;padding:4px 6px;font-size:9px;color:var(--hint);border-bottom:1px solid var(--border);letter-spacing:.05em;position:sticky;top:0;background:var(--bg3);z-index:1}
+.seg-row{display:grid;grid-template-columns:48px 38px 50px 1fr 70px;gap:2px;padding:4px 6px;border-bottom:1px solid #1c2128;cursor:pointer;align-items:center;transition:background .1s}
+.seg-row:hover{background:var(--bg3)}
+.seg-row.active{background:#1a2a3a;border-left:2px solid var(--cust)}
+.seg-row>span{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill{display:inline-block;font-size:9px;font-weight:600;padding:1px 5px;border-radius:3px;white-space:nowrap}
+.pill-c{background:rgba(88,166,255,.15);color:var(--cust);border:1px solid rgba(88,166,255,.3)}
+.pill-n{background:rgba(248,81,73,.12);color:var(--noise);border:1px solid rgba(248,81,73,.3)}
+.rms-mini{display:flex;align-items:center;gap:4px}
+.rms-bar-bg{width:28px;height:4px;background:var(--bg4);border-radius:2px;overflow:hidden}
+.rms-bar-fill{height:100%;border-radius:2px}
+
+/* ══ MIDDLE — Waveform + Annotations ══ */
+.mid{display:flex;flex-direction:column;overflow:hidden;background:var(--bg);min-width:0}
+.wave-panel{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 12px;flex:0 0 auto}
+.wave-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.wave-title{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.controls{display:flex;align-items:center;gap:8px}
+.btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-family:inherit;transition:background .1s}
+.btn:hover{background:var(--bg4)}
+.time-disp{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);min-width:160px;text-align:right}
+#waveCanvas{width:100%;height:72px;display:block;cursor:pointer;border-radius:3px 3px 0 0}
+#annotCanvas{width:100%;height:24px;display:block;cursor:pointer;border-radius:0 0 3px 3px}
+.wave-legend{display:flex;flex-wrap:wrap;gap:10px;padding:6px 0 2px}
+.wl-group{display:flex;flex-direction:column;gap:3px}
+.wl-title{font-size:9px;color:var(--hint);text-transform:uppercase;letter-spacing:.07em;font-weight:600}
+.wl-items{display:flex;gap:10px;flex-wrap:wrap}
+.wl-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)}
+.wl-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+
+/* ══ RIGHT — Conversation ══ */
+.conv-scroll{flex:1;min-height:0;overflow-y:auto;padding:8px 12px;display:flex;flex-direction:column;gap:1px;overflow-x:hidden}
+
+.msg-wrap{display:flex;flex-direction:column;margin-bottom:4px;width:100%;min-width:0}
+.msg-wrap.r{align-items:flex-end}.msg-wrap.r .msg-ts-row{align-self:flex-end}
+.msg-wrap.c{align-items:center}
+.msg-ts-row{display:flex;align-items:baseline;gap:6px;margin-bottom:3px;max-width:65%}
+.msg-ts{font-size:9px;color:var(--hint);font-family:'JetBrains Mono',monospace}
+.msg-dur{font-size:9px;color:var(--hint);font-family:'JetBrains Mono',monospace}
+
+.bubble{max-width:65%;padding:6px 10px;font-size:11px;line-height:1.55;cursor:pointer;transition:box-shadow .15s;word-break:break-word;box-sizing:border-box}
+.bubble:hover{opacity:.9}
+.ba{background:rgba(63,185,80,.07);border:1px solid rgba(63,185,80,.18);border-radius:0 8px 8px 8px;color:var(--text);transition:box-shadow .15s,background .15s}
+.bc{background:rgba(88,166,255,.09);border:1px solid rgba(88,166,255,.22);border-radius:8px 0 8px 8px;color:var(--text);transition:box-shadow .15s,background .15s}
+.bn{background:rgba(248,81,73,.05);border:1px solid rgba(248,81,73,.18);border-radius:6px;color:rgba(248,81,73,.85);font-style:italic;font-size:11px;transition:box-shadow .15s,background .15s}
+.spk{font-size:9px;font-weight:600;margin-bottom:2px;letter-spacing:.04em}
+.spk-a{color:var(--agent)}.spk-c{color:var(--cust)}.spk-n{color:var(--noise)}
+
+.note-box{max-width:70%;margin-top:3px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-size:10px;display:none}
+.note-box.open{display:block}
+.note-row{display:flex;gap:6px;margin-bottom:2px}
+.note-k{color:var(--hint);min-width:54px;font-family:'JetBrains Mono',monospace;font-size:9px}
+.note-v{color:var(--text);font-family:'JetBrains Mono',monospace;font-size:9px}
+
+.sil-div{display:flex;align-items:center;gap:7px;padding:3px 0;width:90%;margin:2px auto;opacity:0.45;transition:opacity .3s}
+.sil-line{flex:1;height:1px}
+.sil-line.long{background:rgba(210,153,34,.25)}.sil-line.dead{background:rgba(139,148,158,.2)}
+.sil-lbl{font-size:9px;white-space:nowrap;font-family:'JetBrains Mono',monospace}
+.sil-lbl.long{color:var(--sil-long)}.sil-lbl.dead{color:var(--sil-dead)}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ── Info icon & tooltip ── */
+.info-wrap{position:relative;display:inline-flex;align-items:center;gap:4px}
+.info-icon{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;border-radius:50%;border:1px solid var(--hint);color:var(--hint);font-size:8px;font-weight:700;font-family:'JetBrains Mono',monospace;cursor:pointer;flex-shrink:0;transition:border-color .15s,color .15s;line-height:1;user-select:none}
+.info-icon:hover,.info-icon.active{border-color:var(--cust);color:var(--cust)}
+.tx-tooltip{position:fixed;z-index:998;max-width:340px;background:#1c2128;border:1px solid var(--border);border-radius:5px;padding:8px 10px;font-size:11px;color:var(--text);line-height:1.55;box-shadow:0 4px 16px rgba(0,0,0,.5);pointer-events:none;opacity:0;transition:opacity .1s;white-space:normal}
+.tx-tooltip.show{opacity:1}
+.tooltip{position:fixed;z-index:999;max-width:260px;background:#1c2128;border:1px solid var(--cust);border-radius:6px;padding:10px 12px;font-size:11px;color:var(--text);line-height:1.55;box-shadow:0 4px 20px rgba(0,0,0,.5);pointer-events:none;opacity:0;transition:opacity .15s}
+.tooltip.show{opacity:1;pointer-events:auto}
+.tooltip-title{font-size:10px;font-weight:600;color:var(--cust);margin-bottom:5px}
+.tooltip-body{color:var(--muted)}
+.tooltip-formula{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--sil-long);margin-top:5px;padding:4px 6px;background:var(--bg3);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-dot"></div>
+  <span class="hdr-title">MSB CallCenter — ASR Annotation Review</span>
+  <span class="hdr-sub">d23be600 · VoiceBot Mở Khóa Internet Banking · 197.5s · 8kHz Stereo</span>
+  <div style="flex:1"></div>
+  <span class="chip">PhoWhisper-large MLX</span>
+  <span class="chip">Silero VAD v4</span>
+  <span class="chip">Dynamic Threshold</span>
+  <div style="flex:1"></div>
+  <audio id="audioEl" crossorigin="anonymous" preload="metadata" style="display:none"></audio>
+  <span id="audioStatus" style="font-size:10px;color:var(--hint)">⏳ loading audio...</span>
+</div>
+
+<div class="body">
+<!-- ══ LEFT ══ -->
+<div class="left">
+  <div class="panel-hdr">CH1 — Customer Channel Analysis</div>
+
+  <!-- VAD & Signal params -->
+  <div class="vad-section">
+    <div class="vad-title">Signal Metrics (ch1)</div>
+    <div class="kv-grid">
+      <div class="kv"><div class="kv-k">Noise Floor (RMS)</div><div class="kv-v muted">0.00040</div></div>
+      <div class="kv"><div class="kv-k">Speech Ref (85th pct)</div><div class="kv-v blue">0.0393</div></div>
+      <div class="kv"><div class="kv-k">Channel SNR</div><div class="kv-v green">+39.8 dB</div></div>
+      <div class="kv"><div class="kv-k">Max Speech RMS</div><div class="kv-v blue">0.1662</div></div>
+    </div>
+
+    <div class="vad-title" style="margin-top:10px">VAD Calibration (Pass 1→2)</div>
+    <div class="kv-grid">
+      <div class="kv"><div class="kv-k">Calib utterances (N)</div><div class="kv-v muted">3</div></div>
+      <div class="kv"><div class="kv-k">Calib speech ref</div><div class="kv-v blue">0.1662</div></div>
+      <div class="kv"><div class="kv-k">Offset (ΔdB)</div><div class="kv-v yellow">−6 dB</div></div>
+      <div class="kv"><div class="kv-k">Noise target RMS</div><div class="kv-v muted">0.0833</div></div>
+      <div class="kv"><div class="kv-k">Pass 1 threshold</div><div class="kv-v muted">0.300 (conservative)</div></div>
+      <div class="kv"><div class="kv-k">Dynamic threshold</div><div class="kv-v blue">0.666 (pass 2)</div></div>
+    </div>
+
+    <div class="vad-title" style="margin-top:10px">VAD Params</div>
+    <div class="kv-grid">
+      <div class="kv"><div class="kv-k">min_speech_ms</div><div class="kv-v muted">500</div></div>
+      <div class="kv"><div class="kv-k">min_silence_ms</div><div class="kv-v muted">400</div></div>
+      <div class="kv"><div class="kv-k">speech_pad_ms</div><div class="kv-v muted">80</div></div>
+      <div class="kv"><div class="kv-k">model</div><div class="kv-v muted">silero v4</div></div>
+    </div>
+
+    <!-- Threshold bar -->
+    <div class="thr-wrap">
+      <div class="thr-label">Threshold scale  [0.0 → 1.0]  — speech vs noise zones</div>
+      <div class="thr-bar-bg" id="thrBar">
+        <div class="thr-bar-noise" style="left:0;width:30%"></div>
+        <div class="thr-bar-speech" style="left:66.6%;width:33.4%"></div>
+        <!-- Pass1 line at 0.3 -->
+        <div class="thr-line thr-line-p1" style="left:30%" title="Pass1=0.30"></div>
+        <!-- Dynamic thr at 0.666 -->
+        <div class="thr-line thr-line-dyn" style="left:66.6%" title="Dynamic=0.666"></div>
+      </div>
+      <div class="thr-ticks">
+        <span>0.0</span><span style="position:relative;left:0">0.3 P1</span>
+        <span style="position:relative;left:12px">0.67 Dyn</span><span>1.0</span>
+      </div>
+    </div>
+
+    <div class="vad-title" style="margin-top:10px">VAD Pipeline — Kết quả từng bước</div>
+
+    <!-- Step 1: Pass 1 -->
+    <div style="margin-bottom:6px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <span style="font-size:9px;font-weight:600;background:var(--bg4);color:var(--muted);padding:1px 6px;border-radius:3px;font-family:'JetBrains Mono',monospace">PASS 1</span>
+        <span style="font-size:9px;color:var(--hint)">threshold = 0.300 (conservative)</span>
+        <span class="info-icon" onclick="(()=>{showTip(this,'pass1-thr',event)}).call(this)">i</span>
+      </div>
+      <div class="kv-grid">
+        <div class="kv"><div class="kv-k">Segments detected</div><div class="kv-v muted">24</div></div>
+        <div class="kv"><div class="kv-k">Tổng thời lượng</div><div class="kv-v muted">~68s</div></div>
+      </div>
+    </div>
+
+    <!-- Arrow -->
+    <div style="text-align:center;color:var(--hint);font-size:11px;margin:3px 0">↓ <span style="font-size:9px">lọc bằng Dynamic Threshold</span></div>
+
+    <!-- Step 2: Pass 2 -->
+    <div style="margin-bottom:6px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <span style="font-size:9px;font-weight:600;background:rgba(88,166,255,.15);color:var(--cust);padding:1px 6px;border-radius:3px;border:1px solid rgba(88,166,255,.3);font-family:'JetBrains Mono',monospace">PASS 2</span>
+        <span style="font-size:9px;color:var(--hint)">threshold = 0.667 (dynamic)</span>
+        <span class="info-icon" onclick="(()=>{showTip(this,'dyn-thr',event)}).call(this)">i</span>
+      </div>
+      <div class="kv-grid">
+        <div class="kv"><div class="kv-k">→ Speech (trên ngưỡng)</div><div class="kv-v blue">19 segs</div></div>
+        <div class="kv"><div class="kv-k">→ Filtered (dưới ngưỡng)</div><div class="kv-v muted" style="font-size:10px">5 segs bỏ</div></div>
+      </div>
+    </div>
+
+    <!-- Donut-style bar: 19 speech vs 5 filtered trong 24 -->
+    <div style="margin-bottom:8px">
+      <div style="height:6px;border-radius:3px;overflow:hidden;display:flex;gap:1px;background:var(--bg4)">
+        <div style="width:79.2%;background:rgba(88,166,255,.5);border-radius:3px 0 0 3px"></div>
+        <div style="width:20.8%;background:var(--bg4)"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--hint);margin-top:2px;font-family:'JetBrains Mono',monospace">
+        <span>19 đến ASR</span><span>5 bị lọc</span>
+      </div>
+    </div>
+
+    <!-- Arrow -->
+    <div style="text-align:center;color:var(--hint);font-size:11px;margin:3px 0">↓ <span style="font-size:9px">ASR + Human/LLM Review</span></div>
+
+    <!-- Step 3: Final labels -->
+    <div class="vad-title" style="margin-top:6px">Segment Distribution — Sau Review
+      <span class="info-icon" onclick="(()=>{showTip(this,'precision',event)}).call(this)" style="margin-left:4px">i</span>
+    </div>
+    <div class="kv-grid">
+      <div class="kv"><div class="kv-k">CUSTOMER (speech thật)</div><div class="kv-v blue">9</div></div>
+      <div class="kv"><div class="kv-k">SPEECH_NOISE (người xung quanh)</div><div class="kv-v red">15</div></div>
+      <div class="kv"><div class="kv-k">Precision VAD</div><div class="kv-v yellow">37.5%</div></div>
+      <div class="kv"><div class="kv-k"><span class="info-wrap">Recall VAD <span class="info-icon" onclick="(()=>{showTip(this,'recall-vad',event)}).call(this)">i</span></span></div><div class="kv-v green">100%</div></div>
+    </div>
+
+    <!-- Stacked bar: 9 CUSTOMER / 10 NOISE-detected / 5 filtered -->
+    <div style="margin-top:6px">
+      <div style="height:10px;border-radius:4px;overflow:hidden;display:flex;gap:1px">
+        <div style="width:37.5%;background:rgba(88,166,255,.55);display:flex;align-items:center;justify-content:center">
+          <span style="font-size:8px;color:#fff;font-weight:600;white-space:nowrap;padding:0 3px">9 CUSTOMER</span>
+        </div>
+        <div style="width:41.7%;background:rgba(248,81,73,.45);display:flex;align-items:center;justify-content:center">
+          <span style="font-size:8px;color:#fff;font-weight:600;white-space:nowrap;padding:0 3px">10 NOISE</span>
+        </div>
+        <div style="width:20.8%;background:var(--bg4);display:flex;align-items:center;justify-content:center">
+          <span style="font-size:8px;color:var(--hint);font-weight:600;white-space:nowrap;padding:0 3px">5 filtered</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap">
+        <span style="font-size:9px;color:var(--hint);display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:1px;background:rgba(88,166,255,.55);display:inline-block"></span>CUSTOMER</span>
+        <span style="font-size:9px;color:var(--hint);display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:1px;background:rgba(248,81,73,.45);display:inline-block"></span>SPEECH_NOISE</span>
+        <span style="font-size:9px;color:var(--hint);display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:1px;background:var(--bg4);display:inline-block"></span>VAD filtered</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Segment table -->
+  <div class="panel-hdr" style="margin-top:0">Customer Segments</div>
+  <div class="seg-list-hdr mono">
+    <span>Time</span><span>Dur</span><span>RMS</span><span>Transcript</span><span>Label</span>
+  </div>
+  <div class="seg-list" id="segList"></div>
+</div>
+
+<!-- ══ MIDDLE ══ -->
+<div class="mid">
+  <div class="wave-panel">
+    <div class="wave-top">
+      <span class="wave-title">Audio Spectrum + Annotations</span>
+      <div class="controls">
+        <span class="time-disp mono" id="timeDisp">00:00.00 + 0ms / 03:17.50</span>
+        <button class="btn" id="btnPlay">▶ Play</button>
+      </div>
+    </div>
+    <canvas id="waveCanvas"></canvas>
+    <canvas id="annotCanvas"></canvas>
+    <div class="wave-legend">
+      <div class="wl-group">
+        <div class="wl-title">L1 — Speaker</div>
+        <div class="wl-items">
+          <div class="wl-item"><div class="wl-dot" style="background:rgba(63,185,80,.65)"></div>AGENT</div>
+          <div class="wl-item"><div class="wl-dot" style="background:rgba(88,166,255,.65)"></div>CUSTOMER</div>
+          <div class="wl-item"><div class="wl-dot" style="background:rgba(248,81,73,.55)"></div>SPEECH_NOISE</div>
+        </div>
+      </div>
+      <div class="wl-group">
+        <div class="wl-title">L2 — Silence</div>
+        <div class="wl-items">
+          <div class="wl-item"><div class="wl-dot" style="background:rgba(210,153,34,.5)"></div>SILENCE_LONG (1–3s)</div>
+          <div class="wl-item"><div class="wl-dot" style="background:rgba(139,148,158,.4)"></div>SILENCE_DEAD_AIR (&gt;3s)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Conversation fills remaining space -->
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden">
+    <div class="panel-hdr" style="background:var(--bg2);border-bottom:1px solid var(--border);flex:0 0 auto">Conversation (AGENT + CUSTOMER · All Labels)</div>
+    <div class="conv-scroll" id="convScroll"></div>
+  </div>
+</div>
+
+
+</div><!-- /body -->
+</div><!-- /app -->
+
+<script>
+const TOTAL = 197.5;
+const C = {AGENT:'rgba(63,185,80,.6)',CUSTOMER:'rgba(88,166,255,.6)',SPEECH_NOISE:'rgba(248,81,73,.5)',SILENCE_LONG:'rgba(210,153,34,.38)',SILENCE_DEAD_AIR:'rgba(139,148,158,.3)'};
+const MAX_RMS = 0.1662;
+
+const SEGS = [
+  {id:"faa338ae",start:0.9,end:3.38,dur_ms:2480,ch:"AGENT",label:"AGENT",rms:null,peak:null,zcr:null,evar:null,snr_db:null,text:"quý khách muốn mở khóa tài khoản giao dịch điện tử đúng không ạ.",note:"VoiceBot script — xác nhận intent"},
+  {id:"abada34e",start:4.0,end:4.82,dur_ms:820,ch:"CUSTOMER",label:"CUSTOMER",rms:0.1395,peak:0.8553,zcr:0.228,evar:0.993,snr_db:50.8,text:"đúng rồi.",note:"✓ Speech thật — xác nhận intent"},
+  {id:"402e4ef3",start:7.2,end:9.16,dur_ms:1960,ch:"AGENT",label:"AGENT",rms:null,peak:null,zcr:null,evar:null,snr_db:null,text:"quý khách vui lòng cho em xin họ tên đầy đủ ạ.",note:"VoiceBot script — hỏi họ tên"},
+  {id:"a407ea4c",start:10.2,end:11.0,dur_ms:800,ch:"CUSTOMER",label:"CUSTOMER",rms:0.1371,peak:0.9803,zcr:0.215,evar:0.787,snr_db:50.6,text:"phan văn nhật.",note:"✓ Speech thật — cung cấp họ tên"},
+  {id:"2384fe6e",start:13.6,end:17.08,dur_ms:3480,ch:"AGENT",label:"AGENT",rms:null,peak:null,zcr:null,evar:null,snr_db:null,text:"quý khách cung cấp giúp em số giấy tờ tuỳ thân đã đăng kí tại MSB.",note:"VoiceBot script — hỏi số CMND/CCCD"},
+  {id:"14992445",start:20.4,end:20.98,dur_ms:580,ch:"CUSTOMER",label:"CUSTOMER",rms:0.1662,peak:0.9803,zcr:0.173,evar:0.787,snr_db:52.3,text:"giấy tờ gì.",note:"✓ Speech thật — hỏi lại (barge-in)"},
+  {id:"60625797",start:24.3,end:27.78,dur_ms:3480,ch:"AGENT",label:"AGENT",rms:null,peak:null,zcr:null,evar:null,snr_db:null,text:"quý khách cung cấp giúp em số giấy tờ tuỳ thân đã đăng kí tại MSB.",note:"VoiceBot script — nhắc lại"},
+  {id:"b702cb8b",start:29.0,end:31.44,dur_ms:2440,ch:"CUSTOMER",label:"CUSTOMER",rms:0.1494,peak:0.9803,zcr:0.217,evar:0.796,snr_db:51.4,text:"số chứng minh là không ba lăm không chín tám.",note:"✓ Speech thật — số CMND phần 1"},
+  {id:"59880856",start:32.0,end:33.7,dur_ms:1700,ch:"CUSTOMER",label:"CUSTOMER",rms:0.0726,peak:0.7928,zcr:0.146,evar:1.202,snr_db:45.1,text:"không không một một bảy bảy.",note:"✓ Speech thật — số CMND phần 2"},
+  {id:"7eda0c32",start:37.4,end:41.12,dur_ms:3720,ch:"AGENT",label:"AGENT",rms:null,peak:null,zcr:null,evar:null,snr_db:null,text:"trước khi hỗ trợ quý khách vui lòng cung cấp giúp em ngày cấp giấy tờ tuỳ thân.",note:"VoiceBot script — hỏi ngày cấp"},
+  {id:"229fa20c",start:51.8,end:55.58,dur_ms:3780,ch:"AGENT",label:"AGENT",rms:null,peak:null,zcr:null,evar:null,snr_db:null,text:"trước khi hỗ trợ quý khách vui lòng cung cấp giúp em ngày cấp giấy tờ tuỳ thân.",note:"VoiceBot script — nhắc lại ngày cấp"},
+  {id:"63d302c1",start:65.8,end:66.8,dur_ms:1000,ch:"CUSTOMER",label:"SPEECH_NOISE",rms:0.047,peak:0.2343,zcr:0.226,evar:0.63,snr_db:41.3,text:"kích thích của nó rồi.",note:"✗ Ambient noise — người xung quanh"},
+  {id:"58bb3961",start:75.9,end:78.34,dur_ms:2440,ch:"CUSTOMER",label:"SPEECH_NOISE",rms:0.0417,peak:0.3632,zcr:0.2,evar:1.246,snr_db:40.3,text:"mua cái ròng chống trám tại nhà thì không.",note:"✗ Ambient noise — không liên quan"},
+  {id:"7c6829fd",start:79.02,end:83.62,dur_ms:4600,ch:"CUSTOMER",label:"SPEECH_NOISE",rms:0.042,peak:0.42,zcr:0.21,evar:1.1,snr_db:40.4,text:"ơ lộ thì có nghĩa là anh vi nhân viên sắc tóc.",note:"✗ Ambient noise — người xung quanh"},
+  {id:"84ec1c69",start:81.4,end:88.48,dur_ms:7080,ch:"AGENT",label:"AGENT",rms:null,peak:null,zcr:null,evar:null,snr_db:null,text:"dạ thông tin ngày cấp giấy tờ tùy thân quý khách vừa cung cấp chưa chính xác. Quý khách vui lòng đọc liền mạch và đầy đủ ạ.",note:"VoiceBot script — thông báo sai"},
+  {id:"1310c13d",start:84.0,end:86.14,dur_ms:2140,ch:"CUSTOMER",label:"SPEECH_NOISE",rms:0.038,peak:0.35,zcr:0.22,evar:1.0,snr_db:39.6,text:"thế mà tạo nên là bạn tổ không thấy bạn tổ có bất công chăng.",note:"✗ Ambient noise / hallucination"},
+  {id:"9aa607da",start:87.9,end:101.36,dur_ms:13460,ch:"CUSTOMER",label:"CUSTOMER",rms:0.0745,peak:0.7303,zcr:0.193,evar:1.269,snr_db:45.3,text:"tôi nghĩ anh vẫn thấu điện thoại ấy không nhắc gì tôi mở khoá thôi, không nhớ ngày cấp đấy.",note:"✓ Speech thật — KH frustrated, giải thích"},
+  {id:"d9dfb14b",start:104.2,end:111.08,dur_ms:6880,ch:"CUSTOMER",label:"CUSTOMER",rms:0.0744,peak:0.9803,zcr:0.211,evar:1.543,snr_db:45.3,text:"ngày cấp là ba mốt tháng mười hai năm hai không hai hai.",note:"✓ Speech thật — cung cấp ngày cấp CCCD"},
+  {id:"f6bdd5d7",start:110.7,end:117.78,dur_ms:7080,ch:"AGENT",label:"AGENT",rms:null,peak:null,zcr:null,evar:null,snr_db:null,text:"dạ thông tin ngày cấp giấy tờ tùy thân quý khách vừa cung cấp chưa chính xác. Quý khách vui lòng đọc liền mạch và đầy đủ ạ.",note:"VoiceBot script — vẫn sai"},
+  {id:"7428e1c8",start:113.4,end:114.48,dur_ms:1080,ch:"CUSTOMER",label:"SPEECH_NOISE",rms:0.007,peak:0.0575,zcr:0.241,evar:1.426,snr_db:24.8,text:"tại một trung tâm trung tâm y tế đã xác định tính cách của trẻ.",note:"✗ Ambient noise — RMS cực thấp"},
+  {id:"472c8835",start:115.9,end:116.56,dur_ms:660,ch:"CUSTOMER",label:"SPEECH_NOISE",rms:0.0121,peak:0.0721,zcr:0.21,evar:0.96,snr_db:29.6,text:"đọc bản ớ tuổi.",note:"✗ Hallucination"},
+  {id:"698bb3b7",start:117.1,end:117.76,dur_ms:660,ch:"CUSTOMER",label:"SPEECH_NOISE",rms:0.0114,peak:0.08,zcr:0.243,evar:1.474,snr_db:29.0,text:"tuyển đòn thượng.",note:"✗ Hallucination"},
+  {id:"9917ac44",start:118.5,end:120.98,dur_ms:2480,ch:"CUSTOMER",label:"SPEECH_NOISE",rms:0.0232,peak:0.1405,zcr:0.128,evar:1.111,snr_db:35.2,text:"nào mở cố thì tôi nhìn thấy đúng hướng rồi.",note:"✗ Ambient noise"},
+  {id:"b085b443",start:124.7,end:126.58,dur_ms:1880,ch:"CUSTOMER",label:"SPEECH_NOISE",rms:0.0409,peak:0.3475,zcr:0.235,evar:1.079,snr_db:40.1,text:"em hình như bây giờ lâu nay trạng thái gì.",note:"✗ Ambient noise"},
+  {id:"63d6ce1c",start:125.2,end:129.18,dur_ms:3980,ch:"AGENT",label:"AGENT",rms:null,peak:null,zcr:null,evar:null,snr_db:null,text:"trước khi hỗ trợ quý khách vui lòng cung cấp giúp em ngày cấp giấy tờ tuỳ thân.",note:"VoiceBot script — nhắc lần 3"},
+  {id:"a5449f05",start:128.8,end:130.22,dur_ms:1420,ch:"CUSTOMER",label:"SPEECH_NOISE",rms:0.0385,peak:0.3319,zcr:0.22,evar:0.851,snr_db:39.6,text:"đó tôi ở cho đến ngày mai ý ạ.",note:"✗ Ambient noise"},
+  {id:"2136a629",start:133.0,end:147.2,dur_ms:14200,ch:"CUSTOMER",label:"CUSTOMER",rms:0.0651,peak:0.9803,zcr:0.227,evar:1.502,snr_db:44.1,text:"ba mốt tháng mười hai năm hai không hai mốt — ba mốt tháng mười hai năm hai không hai mốt.",note:"✓ Speech thật — đọc lại ngày cấp 2 lần"},
+  {id:"7f7b1f96",start:154.3,end:157.1,dur_ms:2800,ch:"AGENT",label:"AGENT",rms:null,peak:null,zcr:null,evar:null,snr_db:null,text:"quý khách vui lòng cung cấp giúp em ngày tháng năm sinh ạ.",note:"VoiceBot script — hỏi ngày sinh"},
+  {id:"06e6b2b8",start:158.9,end:160.88,dur_ms:1980,ch:"CUSTOMER",label:"CUSTOMER",rms:0.105,peak:0.9491,zcr:0.192,evar:1.233,snr_db:48.3,text:"mười lăm tháng năm một chín chín tám.",note:"✓ Speech thật — cung cấp ngày sinh"},
+  {id:"3b4f790a",start:164.0,end:168.7,dur_ms:4700,ch:"AGENT",label:"AGENT",rms:null,peak:null,zcr:null,evar:null,snr_db:null,text:"quý khách vui lòng giữ máy trong giây lát. Hệ thống đang thực hiện mở khóa tài khoản giao dịch điện tử.",note:"VoiceBot script — đang xử lý"},
+  {id:"ffbf91a2",start:165.02,end:166.78,dur_ms:1760,ch:"CUSTOMER",label:"SPEECH_NOISE",rms:0.0231,peak:0.2343,zcr:0.254,evar:1.635,snr_db:35.1,text:"một thời gian triệu thấy mẹ không thể thở lại.",note:"✗ Ambient noise / hallucination"},
+  {id:"6e7df4d4",start:168.74,end:170.94,dur_ms:2200,ch:"CUSTOMER",label:"SPEECH_NOISE",rms:0.0625,peak:0.3319,zcr:0.183,evar:0.846,snr_db:43.8,text:"có em giới thiệu mà nhà em đủ.",note:"✗ Ambient noise"},
+  {id:"220b89b0",start:170.6,end:186.8,dur_ms:16200,ch:"AGENT",label:"AGENT",rms:null,peak:null,zcr:null,evar:null,snr_db:null,text:"cảm ơn quý khách đã giữ máy ạ. Tài khoản giao dịch điện tử của quý khách đã được mở khóa thành công. Để lấy lại mật khẩu, quý khách vui lòng chọn «Quên mật khẩu» trên ứng dụng MSB mBanking và làm theo hướng dẫn. Cảm ơn quý khách đã đồng hành cùng MSB!",note:"VoiceBot script — mở khóa thành công ✓"},
+  {id:"29e77822",start:173.1,end:178.14,dur_ms:5040,ch:"CUSTOMER",label:"SPEECH_NOISE",rms:0.0394,peak:0.5116,zcr:0.24,evar:1.516,snr_db:39.8,text:"thế lượng mày làm gì nào ờ tại sao nó vẫn giá bỉ.",note:"✗ Ambient noise — người xung quanh"},
+  {id:"920032dd",start:183.56,end:186.38,dur_ms:2820,ch:"CUSTOMER",label:"SPEECH_NOISE",rms:0.0614,peak:0.5428,zcr:0.289,evar:1.156,snr_db:43.6,text:"mẹ anh anh trẻ quá.",note:"✗ Ambient noise"},
+];
+
+const SILS = [
+  {start:4.82,end:7.2,dur:2.4,label:"SILENCE_LONG"},
+  {start:9.16,end:10.2,dur:1.04,label:"SILENCE_LONG"},
+  {start:11.0,end:13.6,dur:2.6,label:"SILENCE_LONG"},
+  {start:17.08,end:20.4,dur:3.32,label:"SILENCE_DEAD_AIR"},
+  {start:20.98,end:24.3,dur:3.32,label:"SILENCE_DEAD_AIR"},
+  {start:27.78,end:29.0,dur:1.22,label:"SILENCE_LONG"},
+  {start:33.7,end:37.4,dur:3.7,label:"SILENCE_DEAD_AIR"},
+  {start:41.12,end:51.8,dur:10.68,label:"SILENCE_DEAD_AIR"},
+  {start:55.58,end:65.8,dur:10.22,label:"SILENCE_DEAD_AIR"},
+  {start:66.8,end:75.9,dur:9.1,label:"SILENCE_DEAD_AIR"},
+  {start:101.36,end:104.2,dur:2.84,label:"SILENCE_LONG"},
+  {start:121.0,end:124.7,dur:3.7,label:"SILENCE_DEAD_AIR"},
+  {start:130.22,end:133.0,dur:2.78,label:"SILENCE_LONG"},
+  {start:147.2,end:154.3,dur:7.1,label:"SILENCE_DEAD_AIR"},
+  {start:157.1,end:158.9,dur:1.8,label:"SILENCE_LONG"},
+  {start:160.88,end:164.0,dur:3.12,label:"SILENCE_DEAD_AIR"},
+];
+
+function ts(sec){const m=Math.floor(sec/60),s=sec%60;return `${String(m).padStart(2,'0')}:${s.toFixed(2).padStart(5,'0')}`}
+function dur2str(ms){return ms>=1000?`${(ms/1000).toFixed(1)}s`:`${ms}ms`}
+function tsRow(s,e){return `${ts(s)} <span style="color:var(--hint)">+${Math.round((e-s)*1000)}ms</span>`}
+
+// ── Left: segment list ─────────────────────────────────────────────────────
+const custSegs=SEGS.filter(s=>s.ch==='CUSTOMER');
+const sl=document.getElementById('segList');
+custSegs.forEach(s=>{
+  const row=document.createElement('div');
+  row.className='seg-row'; row.dataset.id=s.id;
+  const pct=s.rms?Math.min(100,s.rms/MAX_RMS*100):0;
+  const barCol=s.label==='CUSTOMER'?'var(--cust)':'var(--noise)';
+  const pill=s.label==='CUSTOMER'
+    ?'<span class="pill pill-c">CUSTOMER</span>'
+    :'<span class="pill pill-n">NOISE</span>';
+  row.innerHTML=`
+    <span class="mono" style="font-size:9px;color:var(--muted)">${ts(s.start)}</span>
+    <span class="mono" style="font-size:9px;color:var(--hint)">${dur2str(s.dur_ms)}</span>
+    <span>
+      <div class="rms-mini">
+        <span class="mono" style="font-size:9px;min-width:38px">${s.rms!=null?s.rms.toFixed(4):'—'}</span>
+        <div class="rms-bar-bg"><div class="rms-bar-fill" style="width:${pct}%;background:${barCol}"></div></div>
+      </div>
+    </span>
+    <span style="font-size:10px;color:var(--muted)" title="${s.text}">${s.text}</span>
+    <span style="text-align:right">${pill}</span>`;
+  row.addEventListener('click',()=>{
+    document.querySelectorAll('.seg-row').forEach(r=>r.classList.remove('active'));
+    row.classList.add('active');
+    currentTime=s.start; updateTime();
+    scrollTo(s.id);
+  });
+  sl.appendChild(row);
+});
+
+// ── Waveform ───────────────────────────────────────────────────────────────
+const wc=document.getElementById('waveCanvas'),ac=document.getElementById('annotCanvas');
+const wx=wc.getContext('2d'),ax=ac.getContext('2d');
+function resizeC(){
+  const w=wc.parentElement.clientWidth, dpr=devicePixelRatio||1;
+  [wc,ac].forEach((c,i)=>{
+    c.width=w*dpr; c.style.width=w+'px';
+    c.height=(i?24:72)*dpr; c.style.height=(i?24:72)+'px';
+  });
+  drawWave(); drawAnnot();
+}
+function segAtTime(t){
+  for(const s of SEGS) if(t>=s.start&&t<=s.end) return s;
+  return null;
+}
+function drawWave(){
+  const W=wc.width,H=wc.height;
+  wx.clearRect(0,0,W,H);
+  wx.fillStyle='#161b22'; wx.fillRect(0,0,W,H);
+  const bars=Math.floor(W/3);
+  for(let i=0;i<bars;i++){
+    const t=(i/bars)*TOTAL;
+    const seg=segAtTime(t);
+    let amp=0.04;
+    if(seg){
+      if(seg.rms) amp=Math.min(0.9,seg.rms/MAX_RMS*0.85);
+      else amp=0.55+(Math.random()-0.5)*0.1;
+    }
+    amp+=( Math.random()-0.5)*0.06;
+    amp=Math.max(0.02,Math.min(0.95,amp));
+    const h=amp*H*0.88, x=i*3, y=(H-h)/2;
+    wx.fillStyle=seg?C[seg.label]:'#21262d';
+    wx.fillRect(x,y,2,h);
+  }
+  const px=(currentTime/TOTAL)*W;
+  wx.fillStyle='rgba(255,255,255,.9)'; wx.fillRect(px,0,Math.max(1.5,devicePixelRatio),H);
+}
+function drawAnnot(){
+  const W=ac.width,H=ac.height;
+  ax.clearRect(0,0,W,H);
+  ax.fillStyle='#1c2128'; ax.fillRect(0,0,W,H);
+  for(const s of SILS){
+    const x1=(s.start/TOTAL)*W, x2=(s.end/TOTAL)*W;
+    ax.fillStyle=C[s.label]; ax.fillRect(x1,0,x2-x1,H);
+  }
+  for(const s of SEGS){
+    const x1=(s.start/TOTAL)*W, x2=(s.end/TOTAL)*W;
+    ax.fillStyle=C[s.label]||'#30363d';
+    ax.fillRect(x1,0,Math.max(x2-x1,2),H);
+  }
+  const px=(currentTime/TOTAL)*W;
+  ax.fillStyle='rgba(255,255,255,.9)'; ax.fillRect(px,0,Math.max(1.5,devicePixelRatio),H);
+}
+
+// ── Audio + Playback ───────────────────────────────────────────────────────
+const audioEl = document.getElementById('audioEl');
+let currentTime=0, playing=false, ival=null, hasAudio=false;
+const btn=document.getElementById('btnPlay'), td=document.getElementById('timeDisp');
+
+// Auto-load audio: thu jsdelivr CDN truoc, fallback raw GitHub
+const audioStatus = document.getElementById('audioStatus');
+const AUDIO_URLS = [
+  'https://cdn.jsdelivr.net/gh/lampt/msb-ai-codegen-report@main/d23be600-013f-4aa4-8e3d-d96a28ea50c4.wav',
+  'https://raw.githubusercontent.com/lampt/msb-ai-codegen-report/main/d23be600-013f-4aa4-8e3d-d96a28ea50c4.wav',
+];
+let urlIdx = 0;
+
+function tryLoadAudio() {
+  audioEl.src = AUDIO_URLS[urlIdx];
+  audioEl.load();
+  if(audioStatus) audioStatus.textContent = '⏳ loading' + (urlIdx > 0 ? ' (fallback)' : '') + '...';
+}
+tryLoadAudio();
+
+audioEl.addEventListener('canplay', () => {
+  hasAudio = true;
+  if(audioStatus) { audioStatus.textContent = '🔊 d23be600…wav'; audioStatus.style.color = 'var(--agent)'; }
+  currentTime = 0; updateTime();
+}, {once:true});
+
+audioEl.addEventListener('error', () => {
+  urlIdx++;
+  if(urlIdx < AUDIO_URLS.length) {
+    tryLoadAudio(); // thu URL tiep theo
+  } else {
+    if(audioStatus) {
+      audioStatus.textContent = '⚠️ Không load được audio — kiểm tra kết nối mạng';
+      audioStatus.style.color = 'var(--noise)';
+    }
+  }
+});
+
+// Sync currentTime from audio element when playing real audio
+audioEl.addEventListener('timeupdate', () => {
+  if (hasAudio && playing) {
+    currentTime = audioEl.currentTime;
+    updateTime();
+  }
+});
+audioEl.addEventListener('ended', () => {
+  playing = false; btn.textContent = '▶ Play';
+  if (ival) { clearInterval(ival); ival = null; }
+});
+
+function updateTime(){
+  const seg=segAtTime(currentTime);
+  const dur=seg?` +${Math.round((currentTime-seg.start)*1000)}ms`:'';
+  td.textContent=`${ts(currentTime)}${dur} / ${ts(TOTAL)}`;
+  drawWave(); drawAnnot();
+  highlightAndScroll(currentTime);
+}
+
+btn.addEventListener('click',()=>{
+  playing=!playing; btn.textContent=playing?'⏸ Pause':'▶ Play';
+  if(playing){
+    if(hasAudio){
+      audioEl.currentTime = currentTime;
+      audioEl.play();
+    } else {
+      // Simulate khi chua co audio file
+      ival=setInterval(()=>{
+        currentTime=Math.min(currentTime+0.1,TOTAL); updateTime();
+        if(currentTime>=TOTAL){playing=false;btn.textContent='▶ Play';clearInterval(ival);ival=null;}
+      },100);
+    }
+  } else {
+    if(hasAudio) audioEl.pause();
+    if(ival){clearInterval(ival);ival=null;}
+  }
+});
+
+function seekTo(t){
+  currentTime=Math.max(0,Math.min(t,TOTAL));
+  if(hasAudio) audioEl.currentTime=currentTime;
+  updateTime();
+}
+wc.addEventListener('click',e=>{const r=wc.getBoundingClientRect();seekTo((e.clientX-r.left)/r.width*TOTAL);});
+ac.addEventListener('click',e=>{const r=ac.getBoundingClientRect();seekTo((e.clientX-r.left)/r.width*TOTAL);});
+
+// ── Build conversation (mixed AGENT + CUSTOMER) ────────────────────────────
+const cs=document.getElementById('convScroll');
+const msgMap={};
+// Sort segments + silences
+const timeline=[
+  ...SEGS.map(s=>({type:'seg',...s})),
+  ...SILS.map(s=>({type:'sil',...s})),
+].sort((a,b)=>a.start-b.start);
+
+// Deduplicate
+const done=new Set();
+for(const ev of timeline){
+  if(ev.type==='sil'){
+    const k=`s${ev.start}`; if(done.has(k)) continue; done.add(k);
+    const wrap=document.createElement('div');
+    wrap.className='msg-wrap c';
+    const isDead=ev.label==='SILENCE_DEAD_AIR';
+    wrap.innerHTML=`<div class="sil-div" data-sil="${ev.start}">
+      <div class="sil-line ${isDead?'dead':'long'}"></div>
+      <span class="sil-lbl ${isDead?'dead':'long'}">${isDead?'DEAD AIR':'silence'} ${ev.dur.toFixed(1)}s</span>
+      <div class="sil-line ${isDead?'dead':'long'}"></div>
+    </div>`;
+    cs.appendChild(wrap);
+  } else {
+    const s=ev; if(done.has(s.id)) continue; done.add(s.id);
+    const isRight=(s.ch==='CUSTOMER');
+    const wrap=document.createElement('div');
+    wrap.className='msg-wrap'+(isRight?' r':'');
+    const bc=s.label==='AGENT'?'ba':s.label==='CUSTOMER'?'bc':'bn';
+    const sc=s.label==='AGENT'?'spk-a':s.label==='CUSTOMER'?'spk-c':'spk-n';
+    const sl=s.label==='AGENT'?'AGENT':s.label==='CUSTOMER'?'CUSTOMER':'SPEECH_NOISE';
+    const durMs=Math.round((s.end-s.start)*1000);
+    wrap.innerHTML=`
+      <div class="msg-ts-row ${isRight?'':''}">
+        ${isRight?`<span class="msg-dur">${durMs}ms</span><span class="msg-ts">${ts(s.end)}</span>`:
+                  `<span class="msg-ts">${ts(s.start)}</span><span class="msg-dur">${durMs}ms</span>`}
+      </div>
+      <div class="bubble ${bc}" data-id="${s.id}" onclick="toggleNote('${s.id}')">
+        <div class="spk ${sc}">${sl}</div>
+        <div>${s.text}</div>
+      </div>
+      <div class="note-box" id="nb-${s.id}">
+        <div class="note-row"><span class="note-k">id</span><span class="note-v">${s.id}</span></div>
+        <div class="note-row"><span class="note-k">ts</span><span class="note-v">${ts(s.start)} → ${ts(s.end)}</span></div>
+        <div class="note-row"><span class="note-k">dur</span><span class="note-v">${durMs}ms</span></div>
+        ${s.rms!=null?`<div class="note-row"><span class="note-k">RMS</span><span class="note-v">${s.rms.toFixed(4)}</span></div>`:''}
+        ${s.snr_db!=null?`<div class="note-row"><span class="note-k">SNR</span><span class="note-v">+${s.snr_db} dB</span></div>`:''}
+        ${s.zcr!=null?`<div class="note-row"><span class="note-k">ZCR</span><span class="note-v">${s.zcr}</span></div>`:''}
+        <div class="note-row"><span class="note-k">note</span><span class="note-v" style="color:${s.label==='SPEECH_NOISE'?'var(--noise)':'var(--agent)'};white-space:normal">${s.note}</span></div>
+      </div>`;
+    cs.appendChild(wrap);
+    msgMap[s.id]=wrap;
+  }
+}
+
+function toggleNote(id){const el=document.getElementById('nb-'+id);if(el)el.classList.toggle('open');}
+function scrollTo(id){const el=msgMap[id];if(el)el.scrollIntoView({behavior:'smooth',block:'center'});}
+// Track last highlighted element to avoid repeat scrolling
+let lastHighlightId = null;
+
+function highlightAndScroll(t){
+  // 1. Highlight speech bubbles
+  let activeId = null;
+  for(const s of SEGS){
+    const b=document.querySelector(`.bubble[data-id="${s.id}"]`);
+    if(!b) continue;
+    const active=t>=s.start&&t<=s.end;
+    b.style.boxShadow=active?`0 0 0 1.5px ${s.label==='AGENT'?'var(--agent)':s.label==='CUSTOMER'?'var(--cust)':'var(--noise)'}`:'';
+    b.style.background=active?(s.label==='AGENT'?'rgba(63,185,80,.14)':s.label==='CUSTOMER'?'rgba(88,166,255,.16)':'rgba(248,81,73,.10)'):'';
+    if(active) activeId=s.id;
+  }
+
+  // 2. Highlight silence dividers
+  for(const sil of SILS){
+    const el=document.querySelector(`.sil-div[data-sil="${sil.start}"]`);
+    if(!el) continue;
+    const active=t>=sil.start&&t<=sil.end;
+    el.style.opacity=active?'1':'0.45';
+    const lbl=el.querySelector('.sil-lbl');
+    if(lbl) lbl.style.fontWeight=active?'600':'400';
+  }
+
+  // 3. Auto-scroll conversation to active element
+  const scrollTarget = activeId || (() => {
+    // In silence — find nearest sil or next seg
+    for(const sil of SILS){
+      if(t>=sil.start&&t<=sil.end) return `sil-${sil.start}`;
+    }
+    return null;
+  })();
+
+  if(scrollTarget && scrollTarget !== lastHighlightId){
+    lastHighlightId = scrollTarget;
+    let el = null;
+    if(activeId) el = msgMap[activeId]?.querySelector('.bubble') || msgMap[activeId];
+    else {
+      // silence: find by data-sil
+      const silEl = document.querySelector(`.sil-div[data-sil="${scrollTarget.replace('sil-','')}"]`);
+      if(silEl) el = silEl.closest('.msg-wrap');
+    }
+    if(el){
+      const conv = document.getElementById('convScroll');
+      const elTop = el.offsetTop - conv.offsetTop;
+      const target = elTop - conv.clientHeight/2 + el.clientHeight/2;
+      conv.scrollTo({top: Math.max(0,target), behavior:'smooth'});
+    }
+  }
+}
+
+window.addEventListener('resize',resizeC);
+requestAnimationFrame(resizeC);
+
+// ── Transcript hover tooltip ───────────────────────────────────────────────
+const txTip = document.createElement('div');
+txTip.className = 'tx-tooltip';
+document.body.appendChild(txTip);
+
+document.getElementById('segList').addEventListener('mouseover', e => {
+  const cell = e.target.closest('.seg-txt');
+  if(!cell) return;
+  const full = cell.getAttribute('title');
+  if(!full) return;
+  txTip.textContent = full;
+  txTip.classList.add('show');
+});
+document.getElementById('segList').addEventListener('mousemove', e => {
+  if(!txTip.classList.contains('show')) return;
+  let left = e.clientX + 14, top = e.clientY - 10;
+  // overflow check
+  const tw = txTip.offsetWidth, th = txTip.offsetHeight;
+  if(left + tw > window.innerWidth - 8) left = e.clientX - tw - 10;
+  if(top + th > window.innerHeight - 8) top = e.clientY - th - 10;
+  txTip.style.left = left + 'px';
+  txTip.style.top  = top  + 'px';
+});
+document.getElementById('segList').addEventListener('mouseout', e => {
+  if(!e.target.closest('.seg-txt')) return;
+  txTip.classList.remove('show');
+});
+
+// ── Info tooltip system ─────────────────────────────────────────────────────
+const TIPS = {
+  'noise-floor': {
+    title: 'Noise Floor (RMS)',
+    body: 'Mức năng lượng nền của kênh Customer khi không có ai nói — tức là tiếng ồn môi trường xung quanh bắt vào mic điện thoại. Giá trị càng thấp, đường truyền càng sạch.',
+    formula: 'RMS = sqrt(mean(x²))  ·  lấy percentile thứ 10 của toàn bộ frames 50ms'
+  },
+  'speech-ref': {
+    title: 'Speech Ref (85th pct)',
+    body: 'Mức năng lượng tham chiếu đại diện cho giọng nói của khách hàng — lấy giá trị percentile thứ 85 của tất cả frames. Nghĩa là 85% thời gian khách hàng nói ở dưới mức này.',
+    formula: 'speech_ref = percentile(frame_rms[], 85)'
+  },
+  'channel-snr': {
+    title: 'Channel SNR (Signal-to-Noise Ratio)',
+    body: 'Tỷ lệ tín hiệu so với nhiễu nền. +39.8dB nghĩa là giọng nói mạnh hơn tiếng ồn nền khoảng 100 lần về biên độ. Trên 30dB là chất lượng tốt cho ASR.',
+    formula: 'SNR = 20 × log₁₀(speech_ref / noise_floor)  [đơn vị: dB]'
+  },
+  'max-rms': {
+    title: 'Max Speech RMS',
+    body: 'Mức năng lượng đỉnh cao nhất trong tất cả các đoạn nói của khách hàng. Dùng làm anchor reference cho bước calibrate ngưỡng VAD động.',
+    formula: 'max_rms = max(RMS của N utterances đầu tiên)'
+  },
+  'calib-n': {
+    title: 'Calibration Utterances (N)',
+    body: 'Số câu đầu tiên của khách hàng được dùng để "học" mức độ nói của người này, từ đó tính ngưỡng lọc phù hợp. Ví dụ N=3: dùng 3 câu đầu tiên như "đúng rồi", "phan văn nhật", "giấy tờ gì" để calibrate.',
+    formula: 'Càng nhiều câu → ngưỡng càng chính xác, nhưng cần đợi lâu hơn'
+  },
+  'calib-ref': {
+    title: 'Calib Speech Reference',
+    body: 'RMS cao nhất trong số N câu đầu dùng để calibrate. Đây là "tiêu chuẩn giọng nói" của khách — mọi âm thanh có năng lượng thấp hơn đáng kể sẽ bị coi là noise.',
+    formula: 'calib_ref = max(RMS(utt_1), ..., RMS(utt_N))'
+  },
+  'offset-db': {
+    title: 'Offset (ΔdB)',
+    body: 'Khoảng cách an toàn từ mức giọng nói xuống đến ngưỡng lọc, tính bằng decibel. -6dB nghĩa là ngưỡng đặt ở mức bằng 1/2 biên độ so với giọng nói — đủ rộng để không cắt nhầm giọng nhỏ, đủ hẹp để lọc được tiếng ồn.',
+    formula: 'noise_target = calib_ref × 10^(ΔdB/20)'
+  },
+  'noise-target': {
+    title: 'Noise Target RMS',
+    body: 'Mức RMS tối đa mà một đoạn âm thanh được coi là "chỉ là noise" — tính từ calib_ref trừ đi offset. Đoạn nào có RMS dưới mức này → gắn nhãn SPEECH_NOISE.',
+    formula: 'noise_target = 0.1662 × 10^(−6/20) ≈ 0.0833'
+  },
+  'pass1-thr': {
+    title: 'Pass 1 Threshold (Conservative)',
+    body: 'Ngưỡng VAD ở bước đầu tiên — đặt thấp (0.3) để bắt được tất cả mọi âm thanh, kể cả tiếng ồn nhỏ. Mục đích là không bỏ sót câu nói đầu tiên của khách, dù họ nói rất nhỏ.',
+    formula: 'Silero VAD prob > 0.3 → detect là speech (conservative)'
+  },
+  'dyn-thr': {
+    title: 'Dynamic Threshold (Pass 2)',
+    body: 'Ngưỡng VAD thực sự được áp dụng sau khi đã calibrate từ giọng nói của khách. Cao hơn ngưỡng mặc định 0.5, giúp lọc được tiếng người xung quanh mà không cắt nhầm giọng khách.',
+    formula: 'dyn_thr = clip(noise_target × 8.0, 0.3, 0.9)'
+  },
+  'min-speech': {
+    title: 'Min Speech Duration (ms)',
+    body: 'Đoạn âm thanh ngắn hơn 500ms sẽ bị bỏ qua hoàn toàn — thường là tiếng thở, tiếng click, âm thanh ngẫu nhiên. Whisper hallucinate rất nhiều trên đoạn dưới 500ms.',
+    formula: 'Nếu dur(segment) < 500ms → loại, không đưa vào ASR'
+  },
+  'min-silence': {
+    title: 'Min Silence Duration (ms)',
+    body: 'Khoảng lặng ngắn hơn 400ms sẽ bị "nối" hai đoạn nói liền kề lại thành một segment. Giúp không chặt vụn một câu nói thành nhiều mảnh nhỏ khi khách ngừng giữa chừng.',
+    formula: 'gap < 400ms → merge hai segment liền kề'
+  },
+  'speech-pad': {
+    title: 'Speech Pad (ms)',
+    body: 'Mỗi đoạn nói được "đệm" thêm 80ms ở cả đầu lẫn cuối. Cần thiết vì codec telephony (G.711) hay cắt xén vài chục ms âm đầu/cuối câu, pad giúp giữ lại phần đó.',
+    formula: 'segment = [start - 80ms, end + 80ms]'
+  },
+  'precision': {
+    title: 'Precision (Độ chính xác nhãn)',
+    body: 'Trong 24 segments VAD detect trên kênh Customer, chỉ 9 segment là giọng khách thật — 15 segment còn lại là tiếng người xung quanh bị thu vào mic. Precision thấp vì khách gọi ở nơi đông người.',
+    formula: 'Precision = TP / (TP + FP) = 9 / 24 = 37.5%'
+  },
+  'rms-seg': {
+    title: 'RMS — Biên độ trung bình',
+    body: 'Root Mean Square — đo mức năng lượng âm thanh trung bình của đoạn nói. Giá trị cao = nói to, rõ. Giá trị thấp (< 0.02) thường là tiếng ồn nền hoặc hallucination của ASR.',
+    formula: 'RMS = sqrt(mean(amplitude²))'
+  },
+  'snr-seg': {
+    title: 'SNR — Tỷ lệ tín hiệu/nhiễu của đoạn',
+    body: 'So sánh mức năng lượng của đoạn này so với noise floor của cả kênh. SNR cao (+45dB) = giọng nói rõ ràng. SNR thấp (+25dB) = âm thanh yếu, có thể là noise hoặc người nói xa mic.',
+    formula: 'SNR_seg = 20 × log₁₀(RMS_seg / noise_floor)'
+  },
+  'zcr': {
+    title: 'ZCR — Zero Crossing Rate',
+    body: 'Tần suất tín hiệu âm thanh đi qua mức zero. Giọng nói có ZCR vừa phải (0.15–0.25). ZCR cao có thể là âm thanh nhiễu, ZCR thấp là giọng trầm hoặc hài tần thấp.',
+    formula: 'ZCR = mean(|sign(x[n]) - sign(x[n-1])|) / 2'
+  },
+  'vad-pass1-result': {
+    title: 'VAD Pass 1 — Kết quả bước 1',
+    body: 'Ở bước đầu tiên, VAD dùng ngưỡng thấp (0.3) để bắt tất cả mọi âm thanh. 24 segments được detect, bao gồm cả tiếng người xung quanh. Chưa lọc gì cả — đây là "mạng lưới rộng" để không bỏ sót giọng khách.',
+    formula: 'Pass 1: threshold=0.3 → 24 segments detected'
+  },
+  'recall-vad': {
+    title: 'Recall VAD = 100%',
+    body: 'Tất cả 9 câu nói thật của khách hàng đều được VAD phát hiện — không bỏ sót câu nào. Đây là ưu tiên quan trọng nhất: thà detect nhầm (SPEECH_NOISE) còn hơn bỏ sót câu thật của khách.',
+    formula: 'Recall = TP / (TP + FN) = 9 / (9+0) = 100%'
+  },
+  'evar': {
+    title: 'Energy Variance — Độ biến thiên năng lượng',
+    body: 'Đo mức độ "lên xuống" của năng lượng trong đoạn nói. Giọng nói tự nhiên có Energy Variance cao (> 1.0) vì xen kẽ giữa âm mạnh và yếu. Noise thường phẳng hơn (< 0.7).',
+    formula: 'EVar = std(frame_rms) / mean(frame_rms)'
+  },
+};
+
+// Tooltip element
+const tooltipEl = document.createElement('div');
+tooltipEl.className = 'tooltip';
+tooltipEl.id = 'globalTooltip';
+document.body.appendChild(tooltipEl);
+
+let activeIcon = null;
+
+function showTip(icon, tipKey, event){
+  const tip = TIPS[tipKey];
+  if(!tip) return;
+  if(activeIcon === icon){
+    hideTip(); return;
+  }
+  if(activeIcon) activeIcon.classList.remove('active');
+  activeIcon = icon;
+  icon.classList.add('active');
+  tooltipEl.innerHTML = `
+    <div class="tooltip-title">${tip.title}</div>
+    <div class="tooltip-body">${tip.body}</div>
+    ${tip.formula?`<div class="tooltip-formula">${tip.formula}</div>`:''}`;
+  tooltipEl.classList.add('show');
+  // Position
+  const rect = icon.getBoundingClientRect();
+  let left = rect.right + 8;
+  let top  = rect.top - 8;
+  tooltipEl.style.left = left + 'px';
+  tooltipEl.style.top  = top  + 'px';
+  tooltipEl.style.right = 'auto';
+  // Check overflow right
+  setTimeout(()=>{
+    const tr = tooltipEl.getBoundingClientRect();
+    if(tr.right > window.innerWidth - 8) tooltipEl.style.left = (rect.left - tr.width - 8) + 'px';
+    if(tr.bottom > window.innerHeight - 8) tooltipEl.style.top = (window.innerHeight - tr.height - 8) + 'px';
+  }, 0);
+  event.stopPropagation();
+}
+
+function hideTip(){
+  tooltipEl.classList.remove('show');
+  if(activeIcon){ activeIcon.classList.remove('active'); activeIcon=null; }
+}
+document.addEventListener('click', hideTip);
+tooltipEl.addEventListener('click', e => e.stopPropagation());
+
+function mkInfo(tipKey){
+  return `<span class="info-icon" onclick="(()=>{const ic=this;showTip(ic,'${tipKey}',event)}).call(this)">i</span>`;
+}
+
+// Inject info icons vao kv elements sau khi DOM ready
+function injectInfoIcons(){
+  const map = {
+    'Noise Floor (RMS)':         'noise-floor',
+    'Speech Ref (85th pct)':     'speech-ref',
+    'Channel SNR':                'channel-snr',
+    'Max Speech RMS':             'max-rms',
+    'Calib utterances (N)':      'calib-n',
+    'Calib speech ref':          'calib-ref',
+    'Offset (ΔdB)':              'offset-db',
+    'Noise target RMS':          'noise-target',
+    'Pass 1 threshold':          'pass1-thr',
+    'Dynamic threshold':         'dyn-thr',
+    'min_speech_ms':             'min-speech',
+    'min_silence_ms':            'min-silence',
+    'speech_pad_ms':             'speech-pad',
+    'Precision':                 'precision',
+  };
+  document.querySelectorAll('.kv-k').forEach(el => {
+    const txt = el.textContent.trim();
+    for(const [label, key] of Object.entries(map)){
+      if(txt.startsWith(label)){
+        const wrap = document.createElement('span');
+        wrap.className = 'info-wrap';
+        wrap.innerHTML = txt + ' ' + mkInfo(key);
+        el.innerHTML = '';
+        el.appendChild(wrap);
+        break;
+      }
+    }
+  });
+  // Inject vao seg-list-hdr
+  const hdrMap = {
+    'RMS': 'rms-seg',
+  };
+  document.querySelectorAll('.seg-list-hdr span').forEach(el => {
+    const txt = el.textContent.trim();
+    if(hdrMap[txt]){
+      el.innerHTML = `<span class="info-wrap">${txt} ${mkInfo(hdrMap[txt])}</span>`;
+    }
+  });
+  // Inject vao pill labels trong kv
+  const precEl = [...document.querySelectorAll('.kv-k')].find(el=>el.textContent.includes('Precision'));
+  // already handled above
+}
+injectInfoIcons();
+</script>
+</body>
+</html>
